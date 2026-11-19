@@ -1,169 +1,2109 @@
 <!DOCTYPE html>
-<html lang="tr"><head><meta charset="utf-8"><title>Resilience Atlas – Dayanıklılık Atlası</title>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>🌿 RESILIENCE ATLAS – Dayanıklılık Atlası</title>
+<meta name="description" content="eTwinning Projesi - Doğadaki canlıların zorluklarla nasıl başa çıktıklarını keşfet ve ortak dijital atlasta paylaş.">
+<meta name="theme-color" content="#2d5a37">
+
+<!-- Firebase SDK (Ortak Gerçek Zamanlı Bulut Veritabanı) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- Leaflet.js (Kristal Netliğinde Gerçek Dünya Haritası) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYd9IfhAI54BJEaWIfloJ7JFs7IO8D9Tnj5QttQrGF80EQnZ46qYNPJL8Sm46XYCJf6S5svVNnoQ==" crossorigin="anonymous"></script>
+
 <style>
-:root{--bg:#f5f1e6;--card:#fffdf7;--ink:#2b3a2e;--mut:#6b7a6c;--g:#3f7d4e;--g2:#e1ecd9;--br:#a0714a;--line:#d9d2bd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b231c;--card:#243026;--ink:#e8eee4;--mut:#a3b3a4;--g:#7fc08f;--g2:#2d3f30;--br:#d3a47a;--line:#3a4a3c}}
-*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,'Times New Roman',serif}
-header{background:var(--g);color:#fff;padding:14px 16px}header h1{margin:0;font-size:1.3rem}header small{opacity:.9;font-style:italic}
-nav{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-nav button{white-space:nowrap;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:7px 12px;border-radius:20px;font:inherit;font-size:.85rem;cursor:pointer}
-nav button.on{background:var(--g);color:#fff;border-color:var(--g)}
-main{max-width:860px;margin:0 auto;padding:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-h2{margin:.2em 0 .4em;color:var(--g)}h3{margin:.8em 0 .3em;color:var(--br);font-size:1rem}
-label{display:block;font-size:.85rem;color:var(--mut);margin:8px 0 2px}
-input,select,textarea{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
-textarea{min-height:60px}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
-.btn{background:var(--g);color:#fff;border:0;padding:10px 16px;border-radius:8px;font:inherit;cursor:pointer;margin-top:12px}
-.btn.s{background:var(--br);padding:5px 10px;font-size:.8rem;margin:4px 4px 0 0}
-.tag{display:inline-block;background:var(--g2);border-radius:10px;padding:1px 8px;font-size:.75rem;margin-right:4px}
-.pend{background:#f3d9a4;color:#5a3d00}
-.cloud{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:center;padding:14px;min-height:90px}
-.cloud span{color:var(--g);font-weight:bold;line-height:1.1}.cloud span:nth-child(3n){color:var(--br)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.flip{perspective:800px;cursor:pointer;height:210px}.flip>div{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
-.flip.f>div{transform:rotateY(180deg)}.face{position:absolute;inset:0;backface-visibility:hidden;border:2px solid var(--g);border-radius:12px;padding:10px;background:var(--card);overflow:auto;text-align:center}
-.face.b{transform:rotateY(180deg);text-align:left;font-size:.9rem}.face img{max-width:100%;max-height:110px;border-radius:8px}
-svg.map{width:100%;background:#cfe3ea;border-radius:10px;border:1px solid var(--line);cursor:crosshair}
-.land{fill:#b9cfa4;stroke:#8aa876}
-.note{font-size:.8rem;color:var(--mut)}#msg{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;display:none;z-index:9}
-</style></head><body>
-<header><h1>🌿 RESILIENCE ATLAS – Dayanıklılık Atlası</h1><small>Nature is full of survival stories. What can we learn from them?</small></header>
-<nav id="nav"></nav><main id="app"></main><div id="msg"></div>
+/* ==========================================================================
+   CSS TASARIM SİSTEMİ - Sade, Doğal, Hızlı ve Erişilebilir (Botanical Theme)
+   ========================================================================== */
+:root {
+  --font-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: Georgia, 'Times New Roman', serif;
+  
+  --bg-page: #f8f6f0;
+  --bg-card: #ffffff;
+  --bg-subtle: #f1ede3;
+  --text-main: #1d271f;
+  --text-muted: #536456;
+  --text-light: #7b8e7e;
+  
+  --brand-green: #2d5a37;
+  --brand-green-hover: #22452a;
+  --brand-green-light: #e6f0e7;
+  --brand-earth: #8a5a36;
+  --brand-earth-light: #f5ece3;
+  
+  --border-color: #dfd9cc;
+  --border-focus: #2d5a37;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 10px rgba(0,0,0,0.07);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  
+  --touch-min: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-page: #151c16;
+    --bg-card: #1e2720;
+    --bg-subtle: #253127;
+    --text-main: #edf2ee;
+    --text-muted: #a6b8a8;
+    --text-light: #7a8e7c;
+    
+    --brand-green: #68ad77;
+    --brand-green-hover: #7fc28e;
+    --brand-green-light: #1e3323;
+    --brand-earth: #d69c72;
+    --brand-earth-light: #38291e;
+    
+    --border-color: #2e3e31;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(75px + env(safe-area-inset-top, 0px));
+}
+
+body {
+  font-family: var(--font-serif);
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Erişilebilir Odak Çizgisi */
+:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   HEADER & ÜST GEZİNME (Mobile, Tablet, Desktop Uyumlu)
+   ========================================================================== */
+header {
+  background: var(--brand-green);
+  color: #ffffff;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand h1 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+}
+
+.brand small {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  font-style: italic;
+  font-family: var(--font-heading);
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Butonlar */
+.btn-header {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  min-height: 36px;
+}
+.btn-header:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.btn-header.active {
+  background: #fdf3d0;
+  color: #5c4202;
+  border-color: #f7df8f;
+  font-weight: 600;
+}
+
+/* Sekmeler (Tabs - Yatay Kaydırılabilir ve Dokunmatik Dostu) */
+nav.tab-nav {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 60px;
+  z-index: 40;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+nav.tab-nav::-webkit-scrollbar { display: none; }
+
+.nav-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  padding: 6px 12px;
+  gap: 6px;
+}
+
+.tab-btn {
+  white-space: nowrap;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  padding: 8px 14px;
+  border-radius: 24px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tab-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text-main);
+}
+.tab-btn.active {
+  background: var(--brand-green);
+  color: #ffffff;
+  border-color: var(--brand-green);
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ==========================================================================
+   ANA İÇERİK ALANI & KARTLAR
+   ========================================================================== */
+main {
+  flex: 1;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease;
+}
+
+h2 {
+  font-family: var(--font-heading);
+  color: var(--brand-green);
+  font-size: 1.35rem;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h3 {
+  font-family: var(--font-heading);
+  color: var(--brand-earth);
+  font-size: 1.05rem;
+  margin: 14px 0 6px;
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 4px;
+}
+
+p { margin-bottom: 8px; }
+.lead { font-size: 1.05rem; font-weight: 500; color: var(--text-main); }
+.muted { color: var(--text-muted); font-size: 0.9rem; }
+.note { font-size: 0.82rem; color: var(--text-light); }
+
+/* ==========================================================================
+   FORM ELEMANLARI (Dokunmatik ekran dostu >= 44px, Kolay Yazılabilir)
+   ========================================================================== */
+.form-group {
+  margin-bottom: 12px;
+}
+label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+label .req { color: #b73434; margin-left: 2px; }
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-page);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--brand-green);
+  box-shadow: 0 0 0 3px var(--brand-green-light);
+  outline: none;
+}
+textarea {
+  min-height: 75px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.grid-cols-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.grid-cols-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.grid-cols-4 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 600px) {
+  .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Butonlar */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--touch-min);
+  padding: 10px 20px;
+  background: var(--brand-green);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+  box-shadow: var(--shadow-sm);
+}
+.btn:hover { background: var(--brand-green-hover); }
+.btn:active { transform: translateY(1px); }
+
+.btn-secondary {
+  background: var(--brand-earth);
+  color: #ffffff;
+}
+.btn-secondary:hover { background: #754c2d; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  box-shadow: none;
+}
+.btn-outline:hover {
+  background: var(--bg-subtle);
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+/* Etiketler (Badges & Tags) */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--brand-green-light);
+  color: var(--brand-green);
+  margin-right: 4px;
+}
+.tag-earth {
+  background: var(--brand-earth-light);
+  color: var(--brand-earth);
+}
+.tag-pending {
+  background: #fff4d6;
+  color: #8c5b00;
+  border: 1px solid #fae39b;
+}
+
+/* ==========================================================================
+   ÖZEL BİLEŞENLER (Kelime Bulutu, 3D Kartlar, Harita, Fotoğraf Yükleyici)
+   ========================================================================== */
+
+/* Kelime Bulutu */
+.word-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  min-height: 110px;
+}
+.cloud-item {
+  color: var(--brand-green);
+  font-weight: 700;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  text-decoration: none;
+}
+.cloud-item:hover { transform: scale(1.15); color: var(--brand-earth); }
+
+/* 3D Dayanıklılık Oyun Kartları */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.flip-card {
+  perspective: 1000px;
+  height: 250px;
+  cursor: pointer;
+}
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.flip-card.is-flipped .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--bg-card);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+.flip-front {
+  text-align: center;
+  border-color: var(--brand-green);
+}
+.flip-front img {
+  max-width: 100%;
+  max-height: 125px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin: 0 auto 8px;
+}
+.flip-back {
+  transform: rotateY(180deg);
+  background: var(--bg-subtle);
+  border-color: var(--brand-earth);
+  text-align: left;
+  font-size: 0.9rem;
+}
+.flip-hint {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+/* Gerçek Coğrafi Harita Konteynerleri */
+.map-container-global {
+  width: 100%;
+  height: 520px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+}
+.map-container-picker {
+  width: 100%;
+  height: 350px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+  margin-top: 8px;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-family: inherit;
+  padding: 4px;
+}
+.leaflet-popup-content {
+  margin: 10px 12px;
+  line-height: 1.4;
+}
+.leaflet-container {
+  font-family: inherit;
+  background-color: #e4eff2;
+}
+
+/* Fotoğraf Yükleme ve Önizleme */
+.photo-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.photo-preview-box {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+}
+.photo-preview-box img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* KVKK & Veri Güvenliği Aydınlatma Kutusu */
+.kvkk-box {
+  background: #fdfbee;
+  border: 1px solid #fae8a4;
+  border-left: 4px solid #d49e1a;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 14px 0;
+  font-size: 0.88rem;
+}
+.kvkk-title {
+  font-weight: 700;
+  color: #7d5904;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kvkk-text {
+  color: #594711;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+.kvkk-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #3b2f0a;
+}
+.kvkk-check-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Durum Bildirimleri (Toast) */
+#toast {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-main);
+  color: var(--bg-page);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-md);
+  display: none;
+  z-index: 100;
+  max-width: 90%;
+  text-align: center;
+}
+
+/* Durum Göstergesi Rozetleri */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.status-badge.live { background: #d7f5dd; color: #165b25; }
+.status-badge.local { background: #fff0d4; color: #8a5700; }
+.status-badge.teacher { background: #e0e9fd; color: #1e429f; }
+
+/* Responsive Düzenler */
+@media (max-width: 600px) {
+  header h1 { font-size: 1.1rem; }
+  .brand small { display: none; }
+  main { padding: 10px; }
+  .card { padding: 14px; }
+  .tab-btn { padding: 6px 10px; font-size: 0.82rem; }
+}
+
+/* Yazdırma Modu */
+@media print {
+  header, nav, .btn, .photo-uploader, #toast, .header-tools { display: none !important; }
+  body { background: #fff; color: #000; }
+  .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==========================================================================
+     ÜST BAŞLIK (HEADER)
+     ========================================================================== -->
+<header>
+  <div class="header-container">
+    <div class="brand">
+      <h1 id="appTitle">🌿 RESILIENCE ATLAS</h1>
+      <small id="appSlogan">Nature is full of survival stories. What can we learn from them?</small>
+    </div>
+    <div class="header-tools">
+      <!-- Dil Seçici (TR / EN) -->
+      <button class="btn-header" onclick="toggleLang()" id="langBtn" aria-label="Dili Değiştir">
+        🌐 <span id="langLabel">English</span>
+      </button>
+      <!-- Öğretmen Girişi -->
+      <button class="btn-header" onclick="toggleTeacher()" id="teacherBtn" aria-label="Öğretmen Girişi">
+        🎓 <span id="teacherLabel">Öğretmen</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ==========================================================================
+     SEKMELER (Yatay kaydırmalı, dokunmatik uyumlu menü)
+     ========================================================================== -->
+<nav class="tab-nav" aria-label="Ana Menü">
+  <div class="nav-container" id="navBar"></div>
+</nav>
+
+<!-- ==========================================================================
+     ANA UYGULAMA İÇERİĞİ
+     ========================================================================== -->
+<main id="app" role="main"></main>
+
+<!-- Bildirim Baloncuğu -->
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ==========================================================================
+     JAVASCRIPT UYGULAMA MANTIĞI
+     ========================================================================== -->
 <script>
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const TABS=[['home','Ana Sayfa'],['discover','1 Discover'],['research','2 Research'],['meets','3 Nature Meets Life'],['cards','4 Cards'],['map','5 Global Map'],['local','6 My Local Habitat'],['atlas','7 Digital Atlas']];
-let tab='home',db=null,col=null,user=null,recs=[],isTeacher=false,live=false,pick=null,lastErr='';
-let who={team:'',country:''};try{who=JSON.parse(localStorage.getItem('ra_who')||'{}')}catch(e){}
-const toast=t=>{const m=$('#msg');m.textContent=t;m.style.display='block';setTimeout(()=>m.style.display='none',2600)};
-const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9ğüşıöç]+/gi,'-').slice(0,60);
-const vis=r=>r.status==='approved'||isTeacher||r.team===who.team&&who.team;
-const by=k=>recs.filter(r=>r.kind===k&&vis(r));
-const orgs=()=>by('research');
-
-async function init(){
- try{user=await claude.use('user');isTeacher=user?.canEdit?.()??false}catch(e){}
- try{db=await claude.use('db')}catch(e){}
- if(db){col=db.collection('records');live=true;
-  col.onSnapshot(s=>{recs=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>{lastErr=e.message;live=false;render()})}
- render()}
-async function save(id,obj){
- const rec={...obj,team:who.team,country:obj.country||who.country,status:isTeacher?'approved':'pending',at:Date.now()};
- if(col){try{await col.doc(id).set(rec);toast(isTeacher?'Kaydedildi ✓':'Gönderildi – öğretmen onayı bekliyor ✓');return true}catch(e){toast('Kayıt hatası: '+e.message);return false}}
- recs=recs.filter(r=>r.id!==id).concat({id,...rec});toast('Yerel olarak kaydedildi (veritabanı yok)');render();return true}
-const setStatus=(id,st)=>col?.doc(id).update({status:st});
-const delRec=id=>confirm('Silinsin mi?')&&col?.doc(id).delete();
-const val=id=>($('#'+id)?.value||'').trim();
-const fld=(id,l,t='text',ph='')=>`<div><label>${l}</label>${t==='area'?`<textarea id="${id}" placeholder="${ph}"></textarea>`:`<input id="${id}" type="${t}" placeholder="${ph}">`}</div>`;
-const sel=(id,l,o)=>`<div><label>${l}</label><select id="${id}">${o.map(x=>`<option value="${esc(x[0])}">${esc(x[1]||x[0])}</option>`).join('')}</select></div>`;
-const GROUPS=[['Plant','Bitki – Plant'],['Animal','Hayvan – Animal'],['Fungi','Mantar – Fungi'],['Other','Diğer – Other']];
-const status=r=>r.status==='approved'?'':`<span class="tag pend">⏳ onay bekliyor</span>`;
-const adminBtns=r=>isTeacher?`<button class="btn s" onclick="setStatus('${r.id}','approved')">✔ Onayla</button><button class="btn s" onclick="setStatus('${r.id}','pending')">↩ Beklet</button><button class="btn s" onclick="delRec('${r.id}')">🗑 Sil</button>`:'';
-const photoOf=r=>r.photo?`<img src="${r.photo}" alt="" style="max-width:100%;max-height:120px;border-radius:8px">`:'';
-
-function who$(){return `<div class="card"><h3>👥 Takımım – My team</h3><div class="row">
- <div><label>Takım adı – Team name</label><input id="wt" value="${esc(who.team||'')}"></div>
- <div><label>Ülke – Country</label><input id="wc" value="${esc(who.country||'')}"></div></div>
- <button class="btn s" onclick="setWho()">Kaydet</button>
- <p class="note">${live?'🟢 Ortak veritabanı bağlı':'🟠 Veritabanı bağlı değil: kayıtlar yalnızca bu oturumda tutulur.'+(lastErr?' ('+esc(lastErr)+')':'')} ${isTeacher?'· 🎓 Öğretmen modu: onay/silme yetkisi':'· Katkılar öğretmen onayından sonra herkese görünür.'}</p></div>`}
-function setWho(){who={team:val('wt'),country:val('wc')};try{localStorage.setItem('ra_who',JSON.stringify(who))}catch(e){}toast('Takım bilgisi kaydedildi');render()}
-const needWho=()=>{if(!who.team){toast('Önce takım adınızı girin');return true}};
-
-function mapSVG(pts,clickable){
- const X=lo=>(lo+180)*2,Y=la=>(90-la)*2;
- const land=['-168,66 -140,70 -95,72 -60,60 -55,48 -80,25 -97,16 -85,8 -105,22 -125,40 -140,58','-80,10 -60,10 -35,-6 -40,-22 -58,-38 -68,-55 -75,-30 -80,-5','-10,36 0,50 20,60 40,68 60,60 30,40 10,38','-17,20 -5,35 20,33 35,30 51,11 40,-15 20,-35 10,-5 -10,5','40,68 100,75 170,68 140,40 120,22 100,5 80,10 60,25 45,40','112,-12 153,-12 150,-38 115,-34','-55,60 -20,70 -30,82 -60,80']
-  .map(p=>`<polygon class="land" points="${p.split(' ').map(q=>{const[a,b]=q.split(',');return X(+a)+','+Y(+b)}).join(' ')}"/>`).join('');
- let g='';for(let l=-180;l<=180;l+=30)g+=`<line x1="${X(l)}" y1="0" x2="${X(l)}" y2="360" stroke="#fff" stroke-opacity=".4"/>`;for(let l=-60;l<=60;l+=30)g+=`<line x1="0" y1="${Y(l)}" x2="720" y2="${Y(l)}" stroke="#fff" stroke-opacity=".4"/>`;
- const dots=pts.map(r=>`<circle cx="${X(+r.lng)}" cy="${Y(+r.lat)}" r="6" fill="${r.kind==='local'?'#d97b29':'#2f6b3d'}" stroke="#fff" stroke-width="1.5" style="cursor:pointer" onclick="event.stopPropagation();showPin('${r.id}')"><title>${esc(r.name)}</title></circle>`).join('');
- return `<svg class="map" id="map" viewBox="0 0 720 360" ${clickable?`onclick="mapClick(event)"`:''}>${land}${g}${dots}<circle id="pick" r="7" fill="red" ${pick?`cx="${X(pick.lng)}" cy="${Y(pick.lat)}"`:'display="none"'}/></svg>`}
-function mapClick(e){const s=$('#map'),b=s.getBoundingClientRect(),x=(e.clientX-b.left)/b.width*720,y=(e.clientY-b.top)/b.height*360;
- pick={lng:+(x/2-180).toFixed(2),lat:+(90-y/2).toFixed(2)};const c=$('#pick');c.setAttribute('cx',x);c.setAttribute('cy',y);c.removeAttribute('display');
- if($('#lat'))$('#lat').value=pick.lat;if($('#lng'))$('#lng').value=pick.lng}
-function showPin(id){const r=recs.find(x=>x.id===id);if(!r)return;$('#pin').innerHTML=`<div class="card">${photoOf(r)}<h3>${esc(r.name)} <i>${esc(r.sci||'')}</i></h3><p>🌍 ${esc(r.country)} · ${esc(r.habitat||r.location||'')}</p>${r.challenge?`<p>⚠️ ${esc(r.challenge)}</p>`:''}${r.strategy?`<p>💪 ${esc(r.strategy)}</p>`:''}<p class="note">Takım: ${esc(r.team)}</p></div>`}
-const geo=()=>`<div class="row">${fld('lat','Enlem – Latitude','number','örn. 39.9')}${fld('lng','Boylam – Longitude','number','örn. 32.8')}</div><p class="note">📍 Haritaya tıklayarak da konum seçebilirsiniz (yaklaşık konum; ev adresi girmeyin).</p>`;
-
-function readPhoto(f){return new Promise(res=>{if(!f)return res('');const im=new Image,u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,420/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.7))};im.onerror=()=>res('');im.src=u})}
-const photoFld=()=>`<div><label>📷 Fotoğraf – Photo (yüz/kişisel bilgi olmasın)</label><input id="ph" type="file" accept="image/*"></div>`;
-
-const V={
-home:()=>`<div class="card"><h2>Hoş geldiniz – Welcome</h2><p>Doğadaki canlıların zorluklarla nasıl başa çıktıklarını keşfet. Onların uyum stratejilerini araştır, kendi yaşamımızla ilişkilendir ve uluslararası Dayanıklılık Atlası'na katkıda bulun.</p>
- <p><b>Keşfet → Araştır → Karşılaştır → Hayata Bağla → Haritaya Yerleştir → Paylaş</b></p>
- <p class="note">Önce takımınızı tanımlayın, sonra menüden bir bölüm seçin.</p></div>${who$()}
- <div class="grid">${TABS.slice(1).map(t=>`<div class="card" style="cursor:pointer" onclick="go('${t[0]}')"><b>${t[1]}</b><br><span class="note">${by(({discover:'suggest',research:'research',meets:'link',cards:'research',map:'research',local:'local',atlas:'research'})[t[0]]).length} kayıt</span></div>`).join('')}</div>`,
-
-discover:()=>{const s=by('suggest'),mx=Math.max(1,...s.map(r=>r.count||1));
- return `<div class="card"><h2>Discover Our Biodiversity – Canlıları Keşfedelim</h2><div class="cloud">${s.length?s.map(r=>`<span style="font-size:${14+(r.count||1)/mx*30}px" title="${r.count||1} öneri">${esc(r.name)}</span>`).join(' '):'<i class="note">Henüz öneri yok</i>'}</div></div>
- <div class="card"><h3>Canlı öner – Suggest an organism</h3><div class="row">${fld('n','Canlının adı – Name','text','Cactus')}${fld('c','Ülke – Country','text',who.country)}${sel('g','Canlı grubu – Group',GROUPS)}</div><button class="btn" onclick="doSuggest()">Öner – Submit</button></div>`+
- (isTeacher?`<div class="card"><h3>Öğretmen kontrolü</h3>${recs.filter(r=>r.kind==='suggest').map(r=>`<div>${esc(r.name)} ×${r.count||1} ${status(r)} ${adminBtns(r)}</div>`).join('')}</div>`:'')},
-
-research:()=>`<div class="card"><h2>Research an Organism – Bilimsel Araştırma</h2>
- <h3>A. Identify – Canlıyı tanıyalım</h3><div class="row">${fld('n','Organism name – Canlının adı')}${fld('sci','Scientific name – Bilimsel adı')}${fld('c','Country – Ülke','text',who.country)}${sel('g','Organism group',GROUPS)}</div>${photoFld()}
- <h3>B. Where does it live? – Yaşam alanı</h3><div class="row">${fld('hab','Habitat')}${fld('cli','Climate – İklim')}${fld('dist','Geographical distribution – Coğrafi dağılım')}${fld('env','Environmental conditions')}</div>
- <h3>C. What does it look like? – Fiziksel özellikleri</h3>${fld('look','Bitki: yaprak/çiçek/kök/gövde/boy · Hayvan: vücut yapısı/örtü/boyut/hareket/beslenme','area')}
- <h3>D. Its challenges – Zorluklar</h3>${fld('challenge','Kuraklık, sıcaklık, besin yetersizliği, avcılar, habitat kaybı, rekabet…','area')}
- <h3>E. Survival strategies – Hayatta kalma stratejileri</h3>${fld('strategy','Adaptasyon, su depolama, kamuflaj, göç, dormansi, iş birliği, yenilenme…','area')}
- <h3>F. Superpower · G. Interesting fact · H. Sources</h3>${fld('power','⚡ Superpower – Süper gücü','area')}${fld('fact','Interesting fact – İlginç bilgi','area')}${fld('src','Sources – Kaynaklar','area')}
- <h3>📍 Konum – Map location</h3>${geo()}${mapSVG(orgs().filter(r=>r.lat!=null),true)}
- <h3>🃏 Resilience Card (kartın arkası)</h3>${fld('skill','Life skill – Hayat becerisi','text','Zor zamanlar için kaynaklarını korumayı öğren.')}${fld('msg','Kısa ilham mesajı – Inspiration','text')}
- <button class="btn" onclick="doResearch()">Araştırmayı gönder – Submit</button></div>`,
-
-meets:()=>{const o=orgs();return `<div class="card"><h2>Nature Meets Life – Doğadan Hayata</h2>
- ${sel('org','Canlı seç – Choose organism',o.length?o.map(r=>[r.id,r.name+' ('+r.country+')']):[['','— önce Research bölümünde canlı ekleyin —']])}
- ${fld('ch','Doğadaki zorluk – Challenge in nature')}${fld('st','Canlının stratejisi – Strategy')}${fld('lk','Hayatla bağlantısı – Link to life','area','Örn. Kuraklık → su depolama → zor zamanlar için kaynaklarını korumak')}
- ${sel('tp','Konu – Topic',[['Sınav kaygısı'],['Zorbalık'],['Göç ve uyum'],['Başarısızlık'],['Dışlanma ve aidiyet'],['Çevre sorunları'],['Diğer']])}
- ${fld('q1','What challenge do young people face in our country?','area')}${fld('q2','How can we learn from this organism?','area')}${fld('q3','What can we do at school?','area')}
- <button class="btn" onclick="doLink()">Gönder – Submit</button></div>
- ${by('link').map(r=>`<div class="card"><b>${esc(r.orgName)}</b> ${status(r)} <span class="tag">${esc(r.topic)}</span><br>⚠️ ${esc(r.ch)} → 💪 ${esc(r.st)} → 🌱 ${esc(r.lk)}<br><span class="note">${esc(r.country)} · ${esc(r.team)}</span><br>${adminBtns(r)}</div>`).join('')}`},
-
-cards:()=>{const o=orgs();return `<div class="card"><h2>Resilience Cards – Dayanıklılık Kartları</h2><p class="note">Karta tıklayarak çevirin. Kart bilgileri Research formundan gelir. Her takım 3 canlı + 3 kart hazırlar.</p></div><div class="grid">${o.length?o.map(r=>`<div class="flip" onclick="this.classList.toggle('f')"><div><div class="face">${photoOf(r)}<h3>${esc(r.name)}</h3><i>${esc(r.sci||'')}</i></div><div class="face b"><b>⚡ Superpower:</b> ${esc(r.power)}<br><b>🧭 Life skill:</b> ${esc(r.skill)}<br><i>${esc(r.msg)}</i></div></div></div>`).join(''):'<p class="note">Henüz kart yok.</p>'}</div>`},
-
-map:()=>{const p=by('research').concat(by('local')).filter(r=>r.lat!=null&&r.lat!=='');
- return `<div class="card"><h2>Global Resilience Map – Dünya Dayanıklılık Haritası</h2><label>Filtre – Filter</label><select id="flt" onchange="render()">${[['all','Hepsi'],['Plant','Bitkiler'],['Animal','Hayvanlar'],['Fungi','Mantarlar'],['drought','Kuraklık'],['cold','Soğuk'],['adapt','Uyum']].map(o=>`<option value="${o[0]}" ${window.flt===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>
- ${mapSVG(p.filter(fltOK))}<p class="note">🟢 araştırma · 🟠 yerel gözlem — pin'e tıklayın.</p></div><div id="pin"></div>`},
-
-local:()=>`<div class="card"><h2>My Local Habitat – Çevremdeki Bitkiler</h2><p class="note">🔒 Ev adresi veya hassas konum girmeyin; yüz ve kişisel bilgi içeren fotoğraf yüklemeyin.</p>
- <div class="row">${fld('n','Plant name – Bitkinin adı')}${fld('sci','Scientific name (biliyorsa)')}${fld('c','Country','text',who.country)}${fld('city','City / Region')}${fld('loc','Gözlem yeri (okul bahçesi, park…)')}${fld('d','Observation date','date')}</div>${photoFld()}
- <div class="row">${fld('lf','Leaf shape / colour')}${fld('fl','Flower colour (çiçekli mi?)')}${fld('ht','Plant height')}${fld('rt','Root / stem')}</div>
- ${sel('nat','Is it native? – Bölgenize özgü mü?',[['Evet'],['Hayır'],['Bilmiyorum']])}
- ${fld('challenge','What environmental challenges does it face? How does it survive?','area')}${fld('strategy','Special adaptations – Özel uyumlar','area')}
- ${fld('obs','What makes it special? What surprised you? What can we learn about resilience?','area')}${geo()}${mapSVG(by('local').filter(r=>r.lat!=null),true)}
- <button class="btn" onclick="doLocal()">Gözlemi gönder – Submit</button></div>
- ${by('local').map(r=>`<div class="card">${photoOf(r)}<b>${esc(r.name)}</b> ${status(r)}<br><span class="note">${esc(r.city)} · ${esc(r.loc)} · ${esc(r.date)} · ${esc(r.team)}</span><br>${esc(r.obs)}<br>${adminBtns(r)}</div>`).join('')}`,
-
-atlas:()=>{const q=(window.q||'').toLowerCase();const o=orgs().filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
- return `<div class="card"><h2>Our Digital Atlas – Ortak Dijital Atlasımız</h2><input placeholder="🔍 Ara – Search" value="${esc(window.q||'')}" oninput="window.q=this.value;render(true)" id="qs">
- <button class="btn s" onclick="exportCSV()">⬇ CSV indir</button></div>`+
- o.map(r=>`<div class="card">${photoOf(r)}<h3>${esc(r.name)} <i>${esc(r.sci||'')}</i> ${status(r)}</h3><span class="tag">${esc(r.group)}</span><span class="tag">${esc(r.country)}</span>
- <p><b>Habitat:</b> ${esc(r.habitat)} · ${esc(r.climate)}<br><b>⚠️</b> ${esc(r.challenge)}<br><b>💪</b> ${esc(r.strategy)}<br><b>⚡</b> ${esc(r.power)}<br><b>💡</b> ${esc(r.fact)}</p>
- <p class="note">Kaynak: ${esc(r.src)} · Takım: ${esc(r.team)}</p>${by('link').filter(l=>l.orgId===r.id).map(l=>`<p>🌱 <i>${esc(l.lk)}</i></p>`).join('')}${adminBtns(r)}</div>`).join('')||'<p class="note">Kayıt yok.</p>'}
+// --- 1. FIREBASE BULUT VERİTABANI AYARI (Opsiyonel / Canlı Senkronizasyon) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBL0FFvLkJP1CGl5OkhhfX13eCaBDUzZ1Q",
+  authDomain: "habitat-for-all.firebaseapp.com",
+  projectId: "habitat-for-all",
+  storageBucket: "habitat-for-all.firebasestorage.app",
+  messagingSenderId: "1013754788676",
+  appId: "1:1013754788676:web:0ad3efb477239f37d3b511",
+  measurementId: "G-ZJPK1NYPHJ"
 };
-const fltOK=r=>{const f=window.flt||'all';if(f==='all')return true;if(f==='Plant'||f==='Animal'||f==='Fungi')return r.group===f;const t=((r.challenge||'')+(r.strategy||'')).toLowerCase();return f==='drought'?/drought|kurak|water|su/.test(t):f==='cold'?/cold|soğuk|kış|winter/.test(t):/adapt|uyum/.test(t)};
 
-async function doSuggest(){if(needWho())return;const n=val('n');if(!n)return toast('Canlı adı gerekli');const id='s-'+slug(n),ex=recs.find(r=>r.id===id);
- if(ex){try{await col?.doc(id).update({count:(ex.count||1)+1});toast('Öneri sayısı artırıldı ✓')}catch(e){toast(e.message)}}
- else await save(id,{kind:'suggest',name:n,group:val('g'),count:1})}
-async function doResearch(){if(needWho())return;const n=val('n');if(!n)return toast('Canlı adı gerekli');
- const ph=await readPhoto($('#ph').files[0]),lat=val('lat'),lng=val('lng');
- await save('r-'+slug(n)+'-'+slug(who.team),{kind:'research',name:n,sci:val('sci'),country:val('c'),group:val('g'),photo:ph,habitat:val('hab'),climate:val('cli'),dist:val('dist'),env:val('env'),look:val('look'),challenge:val('challenge'),strategy:val('strategy'),power:val('power'),fact:val('fact'),src:val('src'),skill:val('skill'),msg:val('msg'),lat:lat?+lat:null,lng:lng?+lng:null});go('research')}
-async function doLink(){if(needWho())return;const o=recs.find(r=>r.id===val('org'));if(!o)return toast('Canlı seçin');
- await save('l-'+Date.now().toString(36),{kind:'link',orgId:o.id,orgName:o.name,ch:val('ch'),st:val('st'),lk:val('lk'),topic:val('tp'),q1:val('q1'),q2:val('q2'),q3:val('q3')})}
-async function doLocal(){if(needWho())return;const n=val('n');if(!n)return toast('Bitki adı gerekli');const ph=await readPhoto($('#ph').files[0]),lat=val('lat'),lng=val('lng');
- await save('p-'+Date.now().toString(36),{kind:'local',name:n,sci:val('sci'),country:val('c'),city:val('city'),loc:val('loc'),date:val('d'),photo:ph,leaf:val('lf'),flower:val('fl'),height:val('ht'),root:val('rt'),native:val('nat'),challenge:val('challenge'),strategy:val('strategy'),obs:val('obs'),lat:lat?+lat:null,lng:lng?+lng:null})}
-async function exportCSV(){const rows=recs.filter(r=>r.kind==='research'&&r.status==='approved');const h=['name','sci','country','group','habitat','challenge','strategy','power','fact','src','team'];
- const csv='\ufeff'+h.join(',')+'\n'+rows.map(r=>h.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(',')).join('\n');
- try{const d=await claude.use('downloads');if(!d)return toast('İndirme kullanılamıyor');await d.save({filename:'resilience_atlas.csv',data:csv})}catch(e){toast('İndirilemedi')}}
+// --- 2. ÇOK DİLLİ SİSTEM (TR & EN Destekli) ---
+let currentLang = localStorage.getItem('ra_lang') || 'tr';
 
-function go(t){tab=t;pick=null;render()}
-function render(keepFocus){const a=document.activeElement?.id;
- $('#nav').innerHTML=TABS.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('');
- const h=$('#app'),sc=scrollY;
- if(['research','local'].includes(tab)&&document.querySelector('#app input,#app textarea')&&!window._force&&h.dataset.tab===tab&&!keepFocus){return} // formu snapshot'ta bozma
- h.innerHTML=(tab==='home'?'':who$())+V[tab]();h.dataset.tab=tab;scrollTo(0,sc);
- if(keepFocus&&a){const e=document.getElementById(a);if(e){e.focus();e.setSelectionRange?.(e.value.length,e.value.length)}}}
-const _go=go;go=function(t){window._force=true;_go(t);window._force=false};
-init();
-</script></body></html>
+const I18N = {
+  tr: {
+    slogan: 'Doğa hayatta kalma hikayeleriyle doludur. Onlardan ne öğrenebiliriz?',
+    tabs: [
+      ['home', '🏠 Ana Sayfa'],
+      ['discover', '1 Canlıları Keşfet'],
+      ['research', '2 Araştırma'],
+      ['meets', '3 Doğadan Hayata'],
+      ['cards', '4 Oyun Kartları'],
+      ['map', '5 Dünya Haritası'],
+      ['local', '6 Yerel Habitatım'],
+      ['atlas', '7 Dijital Atlas']
+    ],
+    myTeam: '👥 Takımım ve Ülkem',
+    teamName: 'Takım Adı',
+    country: 'Ülke',
+    saveTeam: 'Bilgileri Kaydet',
+    cloudConnected: '🟢 Ortak Bulut Veritabanı Bağlı',
+    localMode: '🟡 Cihaz Hafızası (Bulut veri senkronu için Firebase eklenebilir)',
+    teacherActive: '🎓 Öğretmen Modu: Onay ve Silme Yetkisi Açık',
+    teacherNote: '· Katkılar öğretmen onayından sonra ortak atlasta herkese görünür.',
+    homeWelcome: 'Hoş geldiniz – Welcome',
+    homeDesc: 'Doğadaki canlıların zorluklarla nasıl başa çıktıklarını keşfet. Onların uyum stratejilerini araştır, kendi yaşamımızla ilişkilendir ve uluslararası Dayanıklılık Atlası\'na katkıda bulun.',
+    homeSteps: 'Keşfet → Araştır → Karşılaştır → Hayata Bağla → Haritaya Yerleştir → Paylaş',
+    recordsCount: 'kayıt',
+    teacherLogin: 'Öğretmen Girişi',
+    teacherExit: 'Öğretmen Modu (Çıkış)',
+    submit: 'Gönder',
+    save: 'Kaydet',
+    approve: '✔ Onayla',
+    pending: '↩ Beklet',
+    delete: '🗑 Sil',
+    search: '🔍 Ara (canlı adı, ülke, strateji)...',
+    exportCsv: '⬇ CSV / Excel İndir',
+    photoUpload: '📷 Fotoğraf Ekle (Yüz veya kişisel bilgi olmasın)',
+    locationPick: '📍 Konum Seç (Haritaya tıklayarak veya koordinat girerek)'
+  },
+  en: {
+    slogan: 'Nature is full of survival stories. What can we learn from them?',
+    tabs: [
+      ['home', '🏠 Home'],
+      ['discover', '1 Discover'],
+      ['research', '2 Research'],
+      ['meets', '3 Nature Meets Life'],
+      ['cards', '4 Game Cards'],
+      ['map', '5 Global Map'],
+      ['local', '6 My Local Habitat'],
+      ['atlas', '7 Digital Atlas']
+    ],
+    myTeam: '👥 My Team & Country',
+    teamName: 'Team Name',
+    country: 'Country',
+    saveTeam: 'Save Team Info',
+    cloudConnected: '🟢 Shared Cloud Database Connected',
+    localMode: '🟡 Device Storage (Add Firebase for cloud multi-user sync)',
+    teacherActive: '🎓 Teacher Mode: Approval & Delete Access Active',
+    teacherNote: '· Submissions appear in the global atlas after teacher approval.',
+    homeWelcome: 'Welcome to Resilience Atlas',
+    homeDesc: 'Discover how living organisms cope with challenges in nature. Research their survival strategies, connect them to human life, and co-create an international Resilience Atlas.',
+    homeSteps: 'Discover → Research → Compare → Connect to Life → Map → Share',
+    recordsCount: 'records',
+    teacherLogin: 'Teacher Login',
+    teacherExit: 'Teacher Mode (Logout)',
+    submit: 'Submit',
+    save: 'Save',
+    approve: '✔ Approve',
+    pending: '↩ Hold',
+    delete: '🗑 Delete',
+    search: '🔍 Search (name, country, strategy)...',
+    exportCsv: '⬇ Export CSV',
+    photoUpload: '📷 Upload Photo (No faces or personal data)',
+    locationPick: '📍 Select Location (Click map or enter coordinates)'
+  }
+};
+
+const t = () => I18N[currentLang];
+
+function toggleLang() {
+  currentLang = (currentLang === 'tr') ? 'en' : 'tr';
+  localStorage.setItem('ra_lang', currentLang);
+  document.getElementById('langLabel').textContent = (currentLang === 'tr') ? 'English' : 'Türkçe';
+  document.getElementById('appSlogan').textContent = t().slogan;
+  renderNav();
+  render();
+}
+
+// --- 3. VERİ DURUMU VE DEĞİŞKENLER ---
+let currentTab = 'home';
+let db = null, col = null, live = false;
+let recs = [];
+let isTeacher = false;
+let pickedLocation = null;
+let currentPhotoBase64 = '';
+
+let who = { team: '', country: '' };
+try { who = JSON.parse(localStorage.getItem('ra_who') || '{"team":"","country":""}'); } catch(e){}
+
+// Öğretmen durumu
+try {
+  if (localStorage.getItem('ra_is_teacher') === 'true' || new URLSearchParams(location.search).get('teacher') === '1') {
+    isTeacher = true;
+  }
+} catch(e){}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug = s => s.toLowerCase().trim().replace(/[^a-z0-9ğüşıöç]+/gi, '-').slice(0, 60);
+
+const toast = msg => {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2800);
+};
+
+const isVisible = r => r.status === 'approved' || isTeacher || (who.team && r.team === who.team);
+const getByKind = kind => recs.filter(r => r.kind === kind && isVisible(r));
+const getOrganisms = () => getByKind('research');
+
+// --- 4. VERİTABANI & DEPOLAMA (Firebase + LocalStorage Fallback) ---
+const DEMO_RECORDS = [
+  // A. Kelime Bulutu Önerileri
+  { id: 's-zeytin', kind: 'suggest', name: 'Zeytin Ağacı (Olive Tree)', country: 'Türkiye / Greece', group: 'Plant', count: 9, status: 'approved' },
+  { id: 's-tardigrade', kind: 'suggest', name: 'Su Ayısı (Tardigrade)', country: 'İtalya / Global', group: 'Animal', count: 12, status: 'approved' },
+  { id: 's-kaktus', kind: 'suggest', name: 'Dikenli Kaktüs (Cactus)', country: 'İspanya / Mexico', group: 'Plant', count: 7, status: 'approved' },
+  { id: 's-kutupayisi', kind: 'suggest', name: 'Kutup Ayısı (Polar Bear)', country: 'Norveç / Arktik', group: 'Animal', count: 6, status: 'approved' },
+  { id: 's-lotus', kind: 'suggest', name: 'Lotus Çiçeği (Lotus)', country: 'India / Global', group: 'Plant', count: 8, status: 'approved' },
+  { id: 's-karahindiba', kind: 'suggest', name: 'Karahindiba (Dandelion)', country: 'Germany / Poland', group: 'Plant', count: 5, status: 'approved' },
+  { id: 's-cam', kind: 'suggest', name: 'Kızılçam (Pine Tree)', country: 'Türkiye', group: 'Plant', count: 4, status: 'approved' },
+  { id: 's-ahtapot', kind: 'suggest', name: 'Ahtapot (Octopus)', country: 'Portugal / Greece', group: 'Animal', count: 5, status: 'approved' },
+
+  // B. Canlı Araştırmaları (Araştırma Profilleri, 3D Kartlar & Harita Pinleri)
+  {
+    id: 'r-zeytin-agaci',
+    kind: 'research',
+    name: 'Zeytin Ağacı (Olive Tree)',
+    sci: 'Olea europaea',
+    country: 'Türkiye / Greece',
+    group: 'Plant',
+    photo: 'https://images.unsplash.com/photo-1541443131876-44b03de101c5?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Akdeniz Makilikleri ve Kayalık Yamaçlar',
+    climate: 'Sıcak, kurak yazlar ve ılıman kışlar',
+    dist: 'Akdeniz Havzası (Türkiye, İtalya, İspanya, Yunanistan)',
+    env: 'Aşırı kuraklık, kireçli ve taşlık zemin, yoğun güneş',
+    challenge: 'Aylarca süren kavurucu yaz kuraklığı, su kıtlığı ve fakir kayalık topraklar.',
+    strategy: 'Toprağın metrelerce derinine inen kök ağı, su kaybını önleyen gümüşi tüylü ve mumsu yaprak tabakası, gövdesinde nem depolama.',
+    power: 'Yüzyıllarca, hatta bin yıl boyunca susuz kayalıkta kök salıp her bahar yeniden yeşerebilme ve meyve verebilme.',
+    fact: 'Zeytin ağaçları gövdesi yansa bile köklerinden yeni filizler vererek hayata dönebilir. Akdeniz\'de 2000 yaşında yaşayan ağaçlar vardır.',
+    skill: 'Köklerin (değerlerin ve bilgin) ne kadar derindeyse, fırtınalara o kadar sağlam direnirsin.',
+    msg: 'Zorluklar geçicidir; sabırla kök sal, zamanı geldiğinde yeniden çiçek açacaksın.',
+    lat: 38.4237,
+    lng: 27.1428,
+    team: 'Gaia Protectors',
+    status: 'approved'
+  },
+  {
+    id: 'r-tardigrade',
+    kind: 'research',
+    name: 'Su Ayısı (Tardigrade)',
+    sci: 'Milnesium tardigradum',
+    country: 'İtalya / Global',
+    group: 'Animal',
+    photo: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Nemli yosunlar, likenler, kutup buzulları ve okyanus tabanları',
+    climate: 'Aşırı uç iklimler (-200°C dondurucu soğuktan +150°C sıcağa)',
+    dist: 'Dünya geneli tüm ekosistemler',
+    env: 'Aşırı radyasyon, mutlak kuruluk, uzay vakumu basıncı',
+    challenge: 'Ortamdaki suyun tamamen buharlaşması, dondurucu kutup soğuğu ve ölümcül radyasyon.',
+    strategy: 'Kriptobiyoz (askıya alınmış yaşam): Vücudundaki su oranını %1\'e indirir, metabolizmasını durdurur ve hücrelerini camlaşan koruyucu proteinlerle zırhlar.',
+    power: 'Uzay boşluğunda açıkta günlerce hayatta kalabilen ve bir damla suyla saatler içinde canlanan tek canlı.',
+    fact: 'Su ayıları 30 yıl boyunca tamamen donmuş veya kuru halde kaldıktan sonra suya kavuşunca uyanabilir.',
+    skill: 'Şartlar çok ağırlaştığında geri çekilip dinlenmek pes etmek değildir; enerjini toplayıp doğru zamanda yeniden başlamaktır.',
+    msg: 'Tükenmiş hissettiğinde kendine mola ver; yeniden canlanma gücü senin içinde saklı.',
+    lat: 41.9028,
+    lng: 12.4964,
+    team: 'BioResilience Roma',
+    status: 'approved'
+  },
+  {
+    id: 'r-kaktus',
+    kind: 'research',
+    name: 'Dikenli Kaktüs (Prickly Pear)',
+    sci: 'Opuntia ficus-indica',
+    country: 'İspanya / Mexico',
+    group: 'Plant',
+    photo: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Kurak çöller, kayalık kurak platolar',
+    climate: 'Aşırı sıcak, çöl iklimi, çok düşük yağış',
+    dist: 'Akdeniz kıyıları, Güney Amerika, İber Yarımadası',
+    env: 'Gündüz 45°C kavurucu sıcak, gece soğuk, susuzluk',
+    challenge: 'Buharlaşma ile aşırı su kaybı riski ve otobur hayvanların gövdeyi yeme tehdidi.',
+    strategy: 'Yapraklarını dikenlere dönüştürerek su kaybını sıfırlamak, kalın etli gövdesinde tonlarca su saklamak, gece serinliğinde gözenek açmak.',
+    power: 'Aylarca tek bir damla yağmur yağmasa bile sulu ve canlı kalabilme gücü.',
+    fact: 'Dikenleri sabah çiğini üzerinde yoğuşturarak köklerine damlatan birer mikro su toplayıcıdır.',
+    skill: 'Zor zamanlara hazırlıklı ol; elindeki kaynakları ve enerjini dikkatli kullan, sınırlarını korumayı öğren.',
+    msg: 'Dikenlerin sınırların, gövden dayanıklılığın olsun.',
+    lat: 40.4168,
+    lng: -3.7038,
+    team: 'EcoWarriors Madrid',
+    status: 'approved'
+  },
+  {
+    id: 'r-kutup-ayisi',
+    kind: 'research',
+    name: 'Kutup Ayısı (Polar Bear)',
+    sci: 'Ursus maritimus',
+    country: 'Norveç / Arktik',
+    group: 'Animal',
+    photo: 'https://images.unsplash.com/photo-1589656966895-2f33e7653819?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Arktik deniz buzulları ve buz çölleri',
+    climate: 'Kutup iklimi (-40°C dondurucu fırtınalar)',
+    dist: 'Kuzey Kutup Dairesi',
+    env: 'Sürekli buz, dondurucu okyanus suyu, kış karanlığı',
+    challenge: 'Hipotermi tehlikesi, av kıtlığı ve buzulların erimesiyle uzayan yüzme mesafeleri.',
+    strategy: 'İçi boş liflerden oluşan şeffaf kürk güneş ışığını siyah derisine iletir; 10 cm kalınlığındaki yağ tabakası sıfır ısı kaybı sağlar.',
+    power: 'Dondurucu suda saatlerce yüzebilme ve karda ısı kaybetmeden uyuyabilme.',
+    fact: 'Tüyleri aslında beyaz değildir, şeffaf ve içi boştur; derisi ise güneş ısısını emmek için tamamen siyahtır.',
+    skill: 'Çevrendeki koşullar ne kadar soğuk ve zorlayıcı olursa olsun, içindeki sıcaklığı ve enerjini muhafaza et.',
+    msg: 'Soğuk rüzgarlar seni yıldırmasın, güçlü bir yalıtım ve inanç her engeli aşar.',
+    lat: 69.6492,
+    lng: 18.9553,
+    team: 'Arctic Explorers',
+    status: 'approved'
+  },
+
+  // C. Doğadan Hayata Köprüleri (Nature Meets Life)
+  {
+    id: 'l-kuraklik-sinav',
+    kind: 'link',
+    orgId: 'r-kaktus',
+    orgName: 'Dikenli Kaktüs (Prickly Pear)',
+    ch: 'Kuraklık ve su kıtlığı',
+    st: 'Suyu gövdede depolamak ve gereksiz tüketimi kısmak',
+    lk: 'Sınav dönemlerinde veya zor haftalarda enerjini boşa harcamamak, uyku ve zihin sağlığını korumak',
+    topic: 'Sınav kaygısı',
+    q1: 'Öğrenciler sınav haftalarında uykusuzluk, aşırı stres ve tükenmişlik yaşıyor.',
+    q2: 'Kaktüs gibi enerjimizi doğru zamanda kullanmalı, gereksiz dikkat dağıtıcıları kısmalıyız.',
+    q3: 'Okulda sınav öncesi akran dayanışması ve nefes egzersizi molaları düzenleyebiliriz.',
+    country: 'Türkiye',
+    team: 'Gaia Protectors',
+    status: 'approved'
+  },
+  {
+    id: 'l-zeytin-zorbalik',
+    kind: 'link',
+    orgId: 'r-zeytin-agaci',
+    orgName: 'Zeytin Ağacı (Olive Tree)',
+    ch: 'Kayalık ve fırtınalı arazide kök tutunamama riski',
+    st: 'Köklerini derin kayalıklara kenetlemek ve dayanışmak',
+    lk: 'Zorbalık ve dışlanma karşısında sağlam arkadaşlık bağları ve öz saygı kökleri oluşturmak',
+    topic: 'Zorbalık',
+    q1: 'Okulda bazı öğrenciler kendini yalnız veya baskı altında hissedebiliyor.',
+    q2: 'Zeytin ağacı gibi sağlam durmak ve tek başına değil, diğer ağaçlarla birbirine kenetlenmek.',
+    q3: 'Okulumuzda akran elçileri oluşturarak zorbalığa karşı ortak duruş sergileyebiliriz.',
+    country: 'İtalya',
+    team: 'BioResilience Roma',
+    status: 'approved'
+  },
+
+  // D. Yerel Habitat Gözlemi (Vatandaş Bilimi)
+  {
+    id: 'p-okul-karahindiba',
+    kind: 'local',
+    name: 'Karahindiba (Dandelion)',
+    sci: 'Taraxacum officinale',
+    country: 'Türkiye',
+    city: 'Ankara',
+    loc: 'Okul Bahçesi - Kaldırım yarığı',
+    photo: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=75',
+    challenge: 'Asfalt ve beton kenarında susuzluk, öğrencilerin basması ve yoğun toz.',
+    obs: 'Toprağın neredeyse hiç olmadığı bir kaldırım çatlağından sarı bir çiçek açması beni çok etkiledi. Kökü çok derine iniyor ve tohumlarını rüzgarla yüzlerce metreye uçurabiliyor.',
+    lat: 39.9208,
+    lng: 32.8541,
+    team: 'Gaia Protectors',
+    status: 'approved'
+  }
+];
+
+function loadLocal() {
+  try {
+    const d = localStorage.getItem('ra_records_v2');
+    if (d && JSON.parse(d).length > 0) {
+      recs = JSON.parse(d);
+    } else {
+      recs = [...DEMO_RECORDS];
+      saveLocal();
+    }
+  } catch(e){
+    recs = [...DEMO_RECORDS];
+  }
+}
+
+function saveLocal() {
+  try {
+    localStorage.setItem('ra_records_v2', JSON.stringify(recs));
+  } catch(e){}
+}
+
+async function initDB() {
+  updateTeacherUI();
+  if (typeof firebase !== 'undefined' && firebaseConfig.projectId) {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      col = db.collection('records');
+      live = true;
+      
+      col.onSnapshot(async snap => {
+        if (snap.empty) {
+          // Firebase koleksiyonu ilk açıldığında boşsa demo verilerini yükle
+          recs = [...DEMO_RECORDS];
+          saveLocal();
+          render();
+          for (const item of DEMO_RECORDS) {
+            try { await col.doc(item.id).set(item); } catch(err){}
+          }
+        } else {
+          recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          saveLocal();
+          render();
+        }
+      }, err => {
+        console.warn('Firebase bağlantı uyarısı:', err);
+        live = false;
+        loadLocal();
+        render();
+      });
+    } catch(e) {
+      live = false;
+      loadLocal();
+      render();
+    }
+  } else {
+    loadLocal();
+    render();
+  }
+}
+
+async function saveRecord(id, obj) {
+  const rec = {
+    ...obj,
+    team: who.team || 'Anonim',
+    country: obj.country || who.country || 'Global',
+    status: isTeacher ? 'approved' : 'pending',
+    timestamp: Date.now()
+  };
+  
+  if (col && live) {
+    try {
+      await col.doc(id).set(rec);
+      toast(isTeacher ? '✓ Kaydedildi' : '✓ Gönderildi (Öğretmen onayı bekleniyor)');
+      return true;
+    } catch(e) {
+      toast('Hata: ' + e.message);
+      return false;
+    }
+  }
+  
+  // Yerel Hafıza Fallback
+  recs = recs.filter(r => r.id !== id).concat({ id, ...rec });
+  saveLocal();
+  toast(isTeacher ? '✓ Yerel olarak kaydedildi' : '✓ Gönderildi (Öğretmen onayı bekleniyor)');
+  render();
+  return true;
+}
+
+const updateStatus = async (id, st) => {
+  if (col && live) {
+    try { await col.doc(id).update({ status: st }); } catch(e){}
+  } else {
+    recs = recs.map(r => r.id === id ? { ...r, status: st } : r);
+    saveLocal();
+    render();
+  }
+};
+
+const deleteRecord = async id => {
+  if (!confirm(currentLang === 'tr' ? 'Bu kayıt silinsin mi?' : 'Delete this record?')) return;
+  if (col && live) {
+    try { await col.doc(id).delete(); } catch(e){}
+  } else {
+    recs = recs.filter(r => r.id !== id);
+    saveLocal();
+    render();
+  }
+};
+
+// --- 5. ÖĞRETMEN GİRİŞİ ---
+function updateTeacherUI() {
+  const btn = $('#teacherBtn');
+  const lbl = $('#teacherLabel');
+  if (isTeacher) {
+    btn.classList.add('active');
+    lbl.textContent = t().teacherExit;
+  } else {
+    btn.classList.remove('active');
+    lbl.textContent = t().teacherLogin;
+  }
+}
+
+function toggleTeacher() {
+  if (isTeacher) {
+    if (confirm(currentLang === 'tr' ? 'Öğretmen modundan çıkmak istiyor musunuz?' : 'Exit teacher mode?')) {
+      isTeacher = false;
+      localStorage.removeItem('ra_is_teacher');
+      toast(currentLang === 'tr' ? 'Öğrenci moduna geçildi' : 'Switched to student mode');
+      updateTeacherUI();
+      render();
+    }
+  } else {
+    const pin = prompt(currentLang === 'tr' ? 'Öğretmen PIN kodunu giriniz (Varsayılan: 2027):' : 'Enter teacher PIN (Default: 2027):');
+    if (pin === '2027' || pin === 'teacher' || pin === 'admin') {
+      isTeacher = true;
+      localStorage.setItem('ra_is_teacher', 'true');
+      toast(currentLang === 'tr' ? 'Öğretmen modu aktif edildi ✓' : 'Teacher mode activated ✓');
+      updateTeacherUI();
+      render();
+    } else if (pin !== null) {
+      toast(currentLang === 'tr' ? 'Hatalı PIN!' : 'Incorrect PIN!');
+    }
+  }
+}
+
+// --- 6. FOTOĞRAF BOYUTLANDIRICI (Hızlı & Kota Dostu İstemci Sıkıştırması) ---
+function handlePhotoUpload(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 800; // Mobil için optimize edilmiş maks boyut
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+        else { w = Math.round(w * (maxDim / h)); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+      
+      const previewBox = $('#photoPreview');
+      const previewImg = $('#photoPreviewImg');
+      if (previewBox && previewImg) {
+        previewImg.src = currentPhotoBase64;
+        previewBox.style.display = 'flex';
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhoto() {
+  currentPhotoBase64 = '';
+  const fi = $('#ph'); if (fi) fi.value = '';
+  const pb = $('#photoPreview'); if (pb) pb.style.display = 'none';
+}
+
+// --- 7. ARAYÜZ YARDIMCILARI (UI Helpers) ---
+const val = id => ($('#' + id)?.value || '').trim();
+
+function teamBoxHTML() {
+  return `
+  <div class="card" style="border-left: 4px solid var(--brand-green);">
+    <h3>${t().myTeam}</h3>
+    <div class="grid-cols-2" style="margin-top: 8px;">
+      <div class="form-group">
+        <label for="wt">${t().teamName}</label>
+        <input id="wt" type="text" value="${esc(who.team || '')}" placeholder="örn. BioWarriors / Team Gaia">
+      </div>
+      <div class="form-group">
+        <label for="wc">${t().country}</label>
+        <input id="wc" type="text" value="${esc(who.country || '')}" placeholder="örn. Türkiye, Italy, Spain">
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+      <button class="btn btn-sm" onclick="saveTeamInfo()">${t().saveTeam}</button>
+      <span class="status-badge ${live ? 'live' : 'local'}">
+        ${live ? t().cloudConnected : t().localMode}
+      </span>
+      ${isTeacher ? `<span class="status-badge teacher">${t().teacherActive}</span>` : `<span class="note">${t().teacherNote}</span>`}
+    </div>
+  </div>`;
+}
+
+function saveTeamInfo() {
+  who = { team: val('wt'), country: val('wc') };
+  try { localStorage.setItem('ra_who', JSON.stringify(who)); } catch(e){}
+  toast(currentLang === 'tr' ? 'Takım bilgisi kaydedildi ✓' : 'Team info saved ✓');
+  render();
+}
+
+function checkTeam() {
+  if (!who.team) {
+    toast(currentLang === 'tr' ? 'Lütfen önce takım adınızı girin!' : 'Please enter your team name first!');
+    return false;
+  }
+  return true;
+}
+
+const statusBadgeHTML = r => r.status === 'approved' ? '' : `<span class="tag tag-pending">⏳ ${currentLang === 'tr' ? 'onay bekliyor' : 'pending'}</span>`;
+
+const adminButtonsHTML = r => isTeacher ? `
+  <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+    <button class="btn btn-sm" onclick="updateStatus('${r.id}','approved')">${t().approve}</button>
+    <button class="btn btn-sm btn-outline" onclick="updateStatus('${r.id}','pending')">${t().pending}</button>
+    <button class="btn btn-sm btn-outline" style="color:#b73434;" onclick="deleteRecord('${r.id}')">${t().delete}</button>
+  </div>` : '';
+
+// --- 8. HARİTA BİLEŞENİ (Leaflet.js Coğrafi Dünya Haritası) ---
+let globalMapInstance = null;
+let pickerMapInstance = null;
+let pickerMarker = null;
+
+function cleanupMaps() {
+  if (globalMapInstance) {
+    try { globalMapInstance.remove(); } catch(e){}
+    globalMapInstance = null;
+  }
+  if (pickerMapInstance) {
+    try { pickerMapInstance.remove(); } catch(e){}
+    pickerMapInstance = null;
+    pickerMarker = null;
+  }
+}
+
+function initGlobalMap(points, retry = 0) {
+  const container = document.getElementById('globalMapContainer');
+  if (!container) return;
+  
+  if (typeof L === 'undefined') {
+    if (retry < 10) {
+      setTimeout(() => initGlobalMap(points, retry + 1), 200);
+    }
+    return;
+  }
+  
+  if (globalMapInstance) {
+    try { globalMapInstance.remove(); } catch(e){}
+    globalMapInstance = null;
+  }
+  if (container._leaflet_id) {
+    container._leaflet_id = null;
+  }
+  
+  globalMapInstance = L.map('globalMapContainer', {
+    center: [32, 20],
+    zoom: 2,
+    minZoom: 1,
+    maxZoom: 18,
+    scrollWheelZoom: true
+  });
+  
+  // Güvenilir OpenStreetMap ve CartoDB katmanları
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(globalMapInstance);
+  
+  const createPinIcon = (color) => L.divIcon({
+    className: 'custom-map-pin',
+    html: `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 2px 5px rgba(0,0,0,0.4);"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  });
+  
+  const greenPin = createPinIcon('#2d5a37');
+  const orangePin = createPinIcon('#d97b29');
+  
+  (points || []).forEach(r => {
+    if (r.lat == null || r.lng == null) return;
+    const icon = r.kind === 'local' ? orangePin : greenPin;
+    const marker = L.marker([+r.lat, +r.lng], { icon }).addTo(globalMapInstance);
+    
+    const popupHTML = `
+      <div style="font-family:inherit; max-width:240px; font-size:0.88rem;">
+        ${r.photo ? `<img src="${r.photo}" style="width:100%; height:90px; object-fit:cover; border-radius:6px; margin-bottom:6px;">` : ''}
+        <h4 style="margin:0 0 2px; color:#2d5a37; font-size:0.95rem;">${esc(r.name)} <i style="font-size:0.8rem; color:#666;">${esc(r.sci || '')}</i></h4>
+        <p style="margin:2px 0;">🌍 <b>${esc(r.country || '')}</b> · ${esc(r.habitat || r.loc || '')}</p>
+        ${r.challenge ? `<p style="margin:3px 0;">⚠️ <b>${currentLang==='tr'?'Zorluk:':'Challenge:'}</b> ${esc(r.challenge)}</p>` : ''}
+        ${r.strategy ? `<p style="margin:3px 0;">💪 <b>${currentLang==='tr'?'Strateji:':'Strategy:'}</b> ${esc(r.strategy)}</p>` : ''}
+        <p style="margin:4px 0 0; font-size:0.75rem; color:#888;">${currentLang==='tr'?'Takım:':'Team:'} ${esc(r.team)}</p>
+      </div>`;
+    marker.bindPopup(popupHTML);
+    marker.on('click', () => selectMapPin(r.id));
+  });
+  
+  // Boyutlandırmayı peş peşe tetikle (gri kutu kalmaması için)
+  setTimeout(() => { if (globalMapInstance) globalMapInstance.invalidateSize(); }, 60);
+  setTimeout(() => { if (globalMapInstance) globalMapInstance.invalidateSize(); }, 250);
+  setTimeout(() => { if (globalMapInstance) globalMapInstance.invalidateSize(); }, 600);
+}
+
+function initPickerMap(latInputId, lngInputId, existingPoints, retry = 0) {
+  const container = document.getElementById('pickerMapContainer');
+  if (!container) return;
+  
+  if (typeof L === 'undefined') {
+    if (retry < 10) {
+      setTimeout(() => initPickerMap(latInputId, lngInputId, existingPoints, retry + 1), 200);
+    }
+    return;
+  }
+  
+  if (pickerMapInstance) {
+    try { pickerMapInstance.remove(); } catch(e){}
+    pickerMapInstance = null;
+    pickerMarker = null;
+  }
+  if (container._leaflet_id) {
+    container._leaflet_id = null;
+  }
+  
+  const startLat = pickedLocation ? pickedLocation.lat : 39.0;
+  const startLng = pickedLocation ? pickedLocation.lng : 35.0;
+  const startZoom = pickedLocation ? 6 : 3;
+  
+  pickerMapInstance = L.map('pickerMapContainer', {
+    center: [startLat, startLng],
+    zoom: startZoom,
+    minZoom: 1,
+    maxZoom: 18
+  });
+  
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(pickerMapInstance);
+  
+  if (existingPoints && existingPoints.length) {
+    existingPoints.forEach(p => {
+      if (p.lat == null || p.lng == null) return;
+      L.circleMarker([+p.lat, +p.lng], {
+        radius: 5,
+        fillColor: '#2d5a37',
+        color: '#ffffff',
+        weight: 1,
+        fillOpacity: 0.6
+      }).addTo(pickerMapInstance).bindTooltip(esc(p.name));
+    });
+  }
+  
+  const redPinIcon = L.divIcon({
+    className: 'picker-pin',
+    html: `<div style="background-color:#e02424; width:22px; height:22px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 2px 7px rgba(0,0,0,0.5);"></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+  
+  if (pickedLocation) {
+    pickerMarker = L.marker([pickedLocation.lat, pickedLocation.lng], {
+      icon: redPinIcon,
+      draggable: true
+    }).addTo(pickerMapInstance);
+    
+    pickerMarker.on('dragend', function(e) {
+      const coord = e.target.getLatLng();
+      setPickedCoords(coord.lat, coord.lng, latInputId, lngInputId);
+    });
+  }
+  
+  pickerMapInstance.on('click', function(e) {
+    const lat = +e.latlng.lat.toFixed(4);
+    const lng = +e.latlng.lng.toFixed(4);
+    setPickedCoords(lat, lng, latInputId, lngInputId);
+    
+    if (pickerMarker) {
+      pickerMarker.setLatLng([lat, lng]);
+    } else {
+      pickerMarker = L.marker([lat, lng], {
+        icon: redPinIcon,
+        draggable: true
+      }).addTo(pickerMapInstance);
+      
+      pickerMarker.on('dragend', function(ev) {
+        const coord = ev.target.getLatLng();
+        setPickedCoords(coord.lat, coord.lng, latInputId, lngInputId);
+      });
+    }
+  });
+  
+  setTimeout(() => { if (pickerMapInstance) pickerMapInstance.invalidateSize(); }, 60);
+  setTimeout(() => { if (pickerMapInstance) pickerMapInstance.invalidateSize(); }, 250);
+  setTimeout(() => { if (pickerMapInstance) pickerMapInstance.invalidateSize(); }, 600);
+}
+
+function quickSetCoords(lat, lng, label) {
+  setPickedCoords(lat, lng, 'lat', 'lng');
+  if (pickerMapInstance) {
+    pickerMapInstance.setView([lat, lng], 7);
+    const redPinIcon = L.divIcon({
+      className: 'picker-pin',
+      html: `<div style="background-color:#e02424; width:22px; height:22px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 2px 7px rgba(0,0,0,0.5);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+    if (pickerMarker) {
+      pickerMarker.setLatLng([lat, lng]);
+    } else {
+      pickerMarker = L.marker([lat, lng], { icon: redPinIcon, draggable: true }).addTo(pickerMapInstance);
+    }
+  }
+  toast(`📍 ${label} seçildi: ${lat}, ${lng}`);
+}
+
+function getMyGPSLocation() {
+  if (!navigator.geolocation) {
+    return toast(currentLang === 'tr' ? 'Tarayıcınız GPS desteklemiyor' : 'GPS not supported');
+  }
+  toast(currentLang === 'tr' ? '📍 GPS konumu alınıyor...' : '📍 Getting GPS location...');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = +pos.coords.latitude.toFixed(4);
+      const lng = +pos.coords.longitude.toFixed(4);
+      quickSetCoords(lat, lng, currentLang === 'tr' ? 'Cihaz Konumunuz' : 'Your Location');
+    },
+    err => {
+      toast(currentLang === 'tr' ? 'Konum izni verilmedi veya alınamadı' : 'Could not get location');
+    },
+    { timeout: 8000 }
+  );
+}
+
+function setPickedCoords(lat, lng, latId, lngId) {
+  pickedLocation = { lat: +lat.toFixed(4), lng: +lng.toFixed(4) };
+  const latEl = document.getElementById(latId || 'lat');
+  const lngEl = document.getElementById(lngId || 'lng');
+  if (latEl) latEl.value = pickedLocation.lat;
+  if (lngEl) lngEl.value = pickedLocation.lng;
+}
+
+function selectMapPin(id) {
+  const r = recs.find(x => x.id === id);
+  if (!r) return;
+  const pinDetails = $('#pinDetails');
+  if (!pinDetails) return;
+  
+  pinDetails.innerHTML = `
+  <div class="card" style="border-left: 4px solid var(--brand-green); animation: fadeIn 0.2s ease;">
+    ${r.photo ? `<img src="${r.photo}" alt="" style="max-width:100%; max-height:160px; border-radius:8px; margin-bottom:8px; object-fit:cover;">` : ''}
+    <h3>${esc(r.name)} <i>${esc(r.sci || '')}</i></h3>
+    <p>🌍 <b>${esc(r.country)}</b> · ${esc(r.habitat || r.loc || '')}</p>
+    ${r.challenge ? `<p>⚠️ <b>${currentLang === 'tr' ? 'Zorluk:' : 'Challenge:'}</b> ${esc(r.challenge)}</p>` : ''}
+    ${r.strategy ? `<p>💪 <b>${currentLang === 'tr' ? 'Uyum Stratejisi:' : 'Strategy:'}</b> ${esc(r.strategy)}</p>` : ''}
+    ${r.power ? `<p>⚡ <b>Superpower:</b> ${esc(r.power)}</p>` : ''}
+    <p class="note">${currentLang === 'tr' ? 'Katkıda bulunan takım:' : 'Team:'} ${esc(r.team)}</p>
+  </div>`;
+  pinDetails.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// --- 9. BÖLÜM ŞABLONLARI (PAGES & VIEWS) ---
+const VIEWS = {
+  // 1. ANA SAYFA
+  home: () => `
+    <div class="card">
+      <h2>🌿 ${t().homeWelcome}</h2>
+      <p class="lead">${t().homeDesc}</p>
+      <div style="padding:10px; background:var(--brand-green-light); border-radius:var(--radius-sm); margin:12px 0;">
+        <b>🔄 ${t().homeSteps}</b>
+      </div>
+    </div>
+    
+    ${teamBoxHTML()}
+    
+    <div class="cards-grid" style="margin-top:16px;">
+      ${t().tabs.slice(1).map((tb, idx) => {
+        const kinds = ['suggest', 'research', 'link', 'research', 'research', 'local', 'research'];
+        const count = getByKind(kinds[idx]).length;
+        return `
+        <div class="card" style="cursor:pointer; display:flex; flex-direction:column; justify-content:space-between;" onclick="goToTab('${tb[0]}')">
+          <div>
+            <h3 style="margin-top:0; border:none;">${tb[1]}</h3>
+          </div>
+          <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+            <span class="tag">${count} ${t().recordsCount}</span>
+            <span style="font-size:1.1rem; color:var(--brand-green);">➜</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`,
+
+  // 2. DISCOVER (Kelime Bulutu)
+  discover: () => {
+    const list = getByKind('suggest');
+    const maxCount = Math.max(1, ...list.map(r => r.count || 1));
+    return `
+    <div class="card">
+      <h2>☁️ ${currentLang === 'tr' ? 'Canlıları Keşfedelim – Kelime Bulutu' : 'Discover Our Biodiversity – Word Cloud'}</h2>
+      <p class="muted">${currentLang === 'tr' ? 'Atlasta yer almasını istediğiniz canlıları önerin. Çok önerilen canlılar bulutta daha büyük görünür.' : 'Suggest organisms you want to see in the atlas. Frequently suggested organisms appear larger.'}</p>
+      <div class="word-cloud">
+        ${list.length ? list.map(r => {
+          const sz = 14 + ((r.count || 1) / maxCount) * 28;
+          return `<span class="cloud-item" style="font-size:${sz}px;" title="${r.count || 1} ${currentLang === 'tr' ? 'öneri' : 'suggestions'}">${esc(r.name)}</span>`;
+        }).join(' ') : `<i class="note">${currentLang === 'tr' ? 'Henüz canlı önerisi yapılmamış.' : 'No suggestions yet.'}</i>`}
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>➕ ${currentLang === 'tr' ? 'Yeni Canlı Öner' : 'Suggest an Organism'}</h3>
+      <div class="grid-cols-3">
+        <div class="form-group">
+          <label for="sn">${currentLang === 'tr' ? 'Canlının Adı' : 'Organism Name'}<span class="req">*</span></label>
+          <input id="sn" type="text" placeholder="örn. Cactus, Olive Tree, Camel">
+        </div>
+        <div class="form-group">
+          <label for="sc">${currentLang === 'tr' ? 'Ülke' : 'Country'}</label>
+          <input id="sc" type="text" value="${esc(who.country || '')}">
+        </div>
+        <div class="form-group">
+          <label for="sg">${currentLang === 'tr' ? 'Grup' : 'Group'}</label>
+          <select id="sg">
+            <option value="Plant">${currentLang === 'tr' ? 'Bitki – Plant' : 'Plant'}</option>
+            <option value="Animal">${currentLang === 'tr' ? 'Hayvan – Animal' : 'Animal'}</option>
+            <option value="Fungi">${currentLang === 'tr' ? 'Mantar – Fungi' : 'Fungi'}</option>
+            <option value="Other">${currentLang === 'tr' ? 'Diğer – Other' : 'Other'}</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" onclick="submitSuggest()">${t().submit}</button>
+    </div>
+    
+    ${isTeacher ? `
+    <div class="card">
+      <h3>🎓 ${currentLang === 'tr' ? 'Öğretmen Denetimi (Öneriler)' : 'Teacher Control (Suggestions)'}</h3>
+      ${recs.filter(r => r.kind === 'suggest').map(r => `
+        <div style="padding:6px 0; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+          <span><b>${esc(r.name)}</b> (${r.count || 1}) ${statusBadgeHTML(r)}</span>
+          ${adminButtonsHTML(r)}
+        </div>
+      `).join('')}
+    </div>` : ''}`;
+  },
+
+  // 3. RESEARCH (Bilimsel Araştırma Formu)
+  research: () => `
+    <div class="card">
+      <h2>🔬 ${currentLang === 'tr' ? 'Bilimsel Canlı Araştırması' : 'Research an Organism'}</h2>
+      <p class="muted">${currentLang === 'tr' ? 'Doğadaki bir canlıyı ve hayatta kalma mekanizmasını detaylıca araştırın.' : 'Explore an organism in nature and its resilience mechanisms in detail.'}</p>
+      
+      <h3>A. ${currentLang === 'tr' ? 'Canlıyı Tanıyalım' : 'Identify the Organism'}</h3>
+      <div class="grid-cols-2">
+        <div class="form-group">
+          <label for="rn">${currentLang === 'tr' ? 'Canlının Adı' : 'Organism Name'}<span class="req">*</span></label>
+          <input id="rn" type="text" placeholder="örn. Tardigrade (Su Ayısı)">
+        </div>
+        <div class="form-group">
+          <label for="rsci">${currentLang === 'tr' ? 'Bilimsel Adı' : 'Scientific Name'}</label>
+          <input id="rsci" type="text" placeholder="örn. Milnesium tardigradum">
+        </div>
+        <div class="form-group">
+          <label for="rc">${currentLang === 'tr' ? 'Ülke' : 'Country'}</label>
+          <input id="rc" type="text" value="${esc(who.country || '')}">
+        </div>
+        <div class="form-group">
+          <label for="rg">${currentLang === 'tr' ? 'Canlı Grubu' : 'Group'}</label>
+          <select id="rg">
+            <option value="Animal">${currentLang === 'tr' ? 'Hayvan – Animal' : 'Animal'}</option>
+            <option value="Plant">${currentLang === 'tr' ? 'Bitki – Plant' : 'Plant'}</option>
+            <option value="Fungi">${currentLang === 'tr' ? 'Mantar – Fungi' : 'Fungi'}</option>
+            <option value="Other">${currentLang === 'tr' ? 'Diğer – Other' : 'Other'}</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="photo-uploader">
+        <label>${t().photoUpload}</label>
+        <input id="ph" type="file" accept="image/*" onchange="handlePhotoUpload(this)">
+        <div class="photo-preview-box" id="photoPreview">
+          <img id="photoPreviewImg" src="" alt="Preview">
+          <button class="btn btn-sm btn-outline" onclick="clearPhoto()">${currentLang === 'tr' ? 'Fotoğrafı Kaldır' : 'Remove Photo'}</button>
+        </div>
+      </div>
+
+      <h3>B. ${currentLang === 'tr' ? 'Yaşam Alanı ve Koşullar' : 'Habitat & Conditions'}</h3>
+      <div class="grid-cols-2">
+        <div class="form-group"><label for="rhab">Habitat</label><input id="rhab" type="text" placeholder="Çöl, derin okyanus, kutup..."></div>
+        <div class="form-group"><label for="rcli">${currentLang === 'tr' ? 'İklim' : 'Climate'}</label><input id="rcli" type="text" placeholder="Kurak, aşırı soğuk..."></div>
+        <div class="form-group"><label for="rdist">${currentLang === 'tr' ? 'Coğrafi Dağılım' : 'Geographical Distribution'}</label><input id="rdist" type="text"></div>
+        <div class="form-group"><label for="renv">${currentLang === 'tr' ? 'Çevresel Koşullar' : 'Environmental Conditions'}</label><input id="renv" type="text"></div>
+      </div>
+
+      <h3>C. ${currentLang === 'tr' ? 'Zorluklar ve Dayanıklılık Stratejileri' : 'Challenges & Survival Strategies'}</h3>
+      <div class="form-group">
+        <label for="rch">${currentLang === 'tr' ? 'Karşılaştığı Zorluklar (Drought, extreme cold, predators...)' : 'Its Challenges'}</label>
+        <textarea id="rch" placeholder="Kuraklık, açlık, yırtıcılar, aşırı sıcaklık..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="rst">${currentLang === 'tr' ? 'Hayatta Kalma Stratejisi (Adaptation, camouflage, dormancy...)' : 'Survival Strategies'}</label>
+        <textarea id="rst" placeholder="Su depolama, kamuflaj, kış uykusu, yenilenme..."></textarea>
+      </div>
+      <div class="grid-cols-2">
+        <div class="form-group">
+          <label for="rpow">⚡ Superpower (${currentLang === 'tr' ? 'Süper Gücü' : 'Superpower'})</label>
+          <input id="rpow" type="text" placeholder="örn. -200°C ile +150°C arasında hayatta kalabilme">
+        </div>
+        <div class="form-group">
+          <label for="rfct">💡 ${currentLang === 'tr' ? 'İlginç Bilgi' : 'Interesting Fact'}</label>
+          <input id="rfct" type="text" placeholder="örn. Uzay boşluğunda yaşayabilen ilk canlı">
+        </div>
+      </div>
+
+      <h3>D. 🃏 Resilience Card (${currentLang === 'tr' ? 'Dayanıklılık Kartı Bilgileri' : 'Card Data'})</h3>
+      <div class="grid-cols-2">
+        <div class="form-group">
+          <label for="rsk">🧭 Life Skill (${currentLang === 'tr' ? 'Hayat Becerisi' : 'Life Skill'})</label>
+          <input id="rsk" type="text" placeholder="örn. Zor zamanlar için enerjini ve kaynaklarını koru">
+        </div>
+        <div class="form-group">
+          <label for="rmsg">✨ ${currentLang === 'tr' ? 'İlham Mesajı' : 'Inspiration Quote'}</label>
+          <input id="rmsg" type="text" placeholder="örn. Şartlar ne kadar zor olursa olsun, uyum sağlama gücün var.">
+        </div>
+      </div>
+
+      <h3>E. ${t().locationPick}</h3>
+      <div class="grid-cols-2">
+        <div class="form-group"><label>Latitude (Enlem)</label><input id="lat" type="number" step="any" placeholder="örn. 39.9"></div>
+        <div class="form-group"><label>Longitude (Boylam)</label><input id="lng" type="number" step="any" placeholder="örn. 32.8"></div>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0;">
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(39.0, 35.0, 'Türkiye')">📍 Türkiye</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(41.9, 12.5, 'İtalya')">📍 İtalya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(40.4, -3.7, 'İspanya')">📍 İspanya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(38.0, 23.7, 'Yunanistan')">📍 Yunanistan</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(60.0, 10.0, 'Norveç')">📍 Norveç</button>
+        <button type="button" class="btn btn-sm" style="background:var(--brand-earth); color:#fff;" onclick="getMyGPSLocation()">🛰️ GPS Konumumu Bul</button>
+      </div>
+      <p class="note">${currentLang === 'tr' ? '📍 Haritada istediğiniz noktaya dokunarak da konumu ayarlayabilirsiniz:' : '📍 Tap anywhere on the map to set location:'}</p>
+      <div id="pickerMapContainer" class="map-container-picker"></div>
+
+      <!-- KVKK & Fotoğraf Güvenliği Aydınlatması -->
+      <div class="kvkk-box">
+        <div class="kvkk-title">🔒 ${currentLang === 'tr' ? 'KVKK & eTwinning Veri Güvenliği Aydınlatması' : 'GDPR & eTwinning Privacy Notice'}</div>
+        <p class="kvkk-text">
+          ${currentLang === 'tr' ? 'Öğrenci güvenliği gereği; yüklediğiniz fotoğrafta <b>öğrenci yüzü, okul forması, isim/logo veya ev adresi</b> bulunmamalıdır. Haritada ev konumu yerine sadece genel şehir veya bölge seçilmelidir.' : 'In compliance with student safety; uploaded photos must <b>not include human faces, uniforms, names, or home addresses</b>. Only public parks, school gardens or general cities should be mapped.'}
+        </p>
+        <label class="kvkk-check-label">
+          <input type="checkbox" id="kvkkResearch" required>
+          <span><b>${currentLang === 'tr' ? 'Fotoğraf & Güvenlik Onayı:' : 'Photo & Privacy Confirmation:'}</b> ${currentLang === 'tr' ? 'Yüklediğim fotoğrafta kişisel veri/yüz bulunmadığını, bilimsel amaçlı ve proje kurallarına uygun olduğunu onaylıyorum.' : 'I confirm that the photo contains no faces or personal data and complies with project rules.'} <span class="req">*</span></span>
+        </label>
+      </div>
+
+      <div style="margin-top:16px;">
+        <button class="btn" onclick="submitResearch()">${currentLang === 'tr' ? 'Araştırmayı Atlasa Gönder' : 'Submit Research'}</button>
+      </div>
+    </div>`,
+
+  // 4. NATURE MEETS LIFE (Doğadan Hayata)
+  meets: () => {
+    const orgs = getOrganisms();
+    return `
+    <div class="card">
+      <h2>🌱 ${currentLang === 'tr' ? 'Doğadan Hayata – Dayanıklılık Köprüsü' : 'Nature Meets Life'}</h2>
+      <p class="muted">${currentLang === 'tr' ? 'Doğadaki canlıların stratejilerini okul ve günlük yaşamdaki zorluklarımızla bağdaştırın.' : 'Connect animal and plant resilience strategies with challenges young people face today.'}</p>
+      
+      <div class="form-group">
+        <label for="morg">${currentLang === 'tr' ? 'Canlı Seç' : 'Choose Organism'}<span class="req">*</span></label>
+        <select id="morg">
+          ${orgs.length ? orgs.map(r => `<option value="${r.id}">${esc(r.name)} (${esc(r.country)})</option>`).join('') : `<option value="">— ${currentLang === 'tr' ? 'Önce Araştırma bölümünden canlı ekleyin' : 'Add an organism in Research first'} —</option>`}
+        </select>
+      </div>
+
+      <div class="grid-cols-2">
+        <div class="form-group">
+          <label for="mch">${currentLang === 'tr' ? 'Doğadaki Zorluk' : 'Challenge in Nature'}</label>
+          <input id="mch" type="text" placeholder="örn. Kuraklık, su kıtlığı">
+        </div>
+        <div class="form-group">
+          <label for="mst">${currentLang === 'tr' ? 'Canlının Stratejisi' : 'Organism Strategy'}</label>
+          <input id="mst" type="text" placeholder="örn. Gövdesinde su depolamak">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="mlk">${currentLang === 'tr' ? 'Hayatla Bağlantısı' : 'Link to Life'}</label>
+        <input id="mlk" type="text" placeholder="örn. Zor zamanlar için içsel ve sosyal kaynaklarını dengeli kullanmak">
+      </div>
+
+      <div class="form-group">
+        <label for="mtp">${currentLang === 'tr' ? 'Konu / Alan' : 'Topic'}</label>
+        <select id="mtp">
+          <option value="Sınav kaygısı">${currentLang === 'tr' ? 'Sınav kaygısı (Exam stress)' : 'Exam stress'}</option>
+          <option value="Zorbalık">${currentLang === 'tr' ? 'Zorbalıkla başa çıkma (Bullying)' : 'Coping with bullying'}</option>
+          <option value="Uyum ve Göç">${currentLang === 'tr' ? 'Yeni bir çevreye uyum (Adaptation to new environment)' : 'Adaptation to new environment'}</option>
+          <option value="Başarısızlık">${currentLang === 'tr' ? 'Başarısızlıkla yüzleşme (Overcoming failure)' : 'Overcoming failure'}</option>
+          <option value="Çevre sorunları">${currentLang === 'tr' ? 'Çevre ve iklim krizine dayanıklılık' : 'Climate resilience'}</option>
+          <option value="Diğer">${currentLang === 'tr' ? 'Diğer (Other)' : 'Other'}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="mq1">1. ${currentLang === 'tr' ? 'Gençler ülkemizde bu konuda ne tür zorluklarla karşılaşıyor?' : 'What challenge do young people face in your country?'}</label>
+        <textarea id="mq1"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="mq2">2. ${currentLang === 'tr' ? 'Bu canlıdan bu zorluk için ne öğrenebiliriz?' : 'How can we learn from this organism?'}</label>
+        <textarea id="mq2"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="mq3">3. ${currentLang === 'tr' ? 'Okulumuzda dayanıklılığı artırmak için ne yapabiliriz?' : 'What can we do at school?'}</label>
+        <textarea id="mq3"></textarea>
+      </div>
+
+      <button class="btn" onclick="submitMeets()">${t().submit}</button>
+    </div>
+    
+    <div style="margin-top:16px;">
+      ${getByKind('link').map(r => `
+        <div class="card" style="border-left: 4px solid var(--brand-earth);">
+          <b>🌱 ${esc(r.orgName)}</b> ${statusBadgeHTML(r)} <span class="tag tag-earth">${esc(r.topic)}</span>
+          <p style="margin-top:6px;">⚠️ ${esc(r.ch)} ➔ 💪 ${esc(r.st)} ➔ 💡 <i>${esc(r.lk)}</i></p>
+          <p class="note">${esc(r.country)} · Takım: ${esc(r.team)}</p>
+          ${adminButtonsHTML(r)}
+        </div>
+      `).join('')}
+    </div>`;
+  },
+
+  // 5. CARDS (3D Oyun Kartları)
+  cards: () => {
+    const orgs = getOrganisms();
+    return `
+    <div class="card">
+      <h2>🃏 ${currentLang === 'tr' ? 'Dayanıklılık Oyun Kartları' : 'Resilience Game Cards'}</h2>
+      <p class="muted">${currentLang === 'tr' ? 'Karta dokunarak veya tıklayarak arka yüzündeki süper gücü ve hayat becerisini görebilirsiniz.' : 'Tap or click on any card to flip and view its superpower and life skill.'}</p>
+    </div>
+    <div class="cards-grid">
+      ${orgs.length ? orgs.map(r => `
+        <div class="flip-card" onclick="this.classList.toggle('is-flipped')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.classList.toggle('is-flipped')">
+          <div class="flip-inner">
+            <!-- Ön Yüz -->
+            <div class="flip-face flip-front">
+              ${r.photo ? `<img src="${r.photo}" alt="${esc(r.name)}">` : `<div style="height:100px; display:flex; align-items:center; justify-content:center; font-size:2.5rem;">🌿</div>`}
+              <h3>${esc(r.name)}</h3>
+              <i class="note">${esc(r.sci || '')}</i>
+              <span class="flip-hint">🔄 ${currentLang === 'tr' ? 'Çevirmek için dokun' : 'Tap to flip'}</span>
+            </div>
+            <!-- Arka Yüz -->
+            <div class="flip-face flip-back">
+              <div>
+                <b>⚡ Superpower:</b>
+                <p style="margin-bottom:6px;">${esc(r.power || (currentLang === 'tr' ? 'Doğal uyum' : 'Natural adaptation'))}</p>
+                <b>🧭 Life Skill:</b>
+                <p style="margin-bottom:6px;">${esc(r.skill || (currentLang === 'tr' ? 'Zorluklara karşı dayanıklı kal.' : 'Stay resilient.'))}</p>
+                ${r.msg ? `<i>"${esc(r.msg)}"</i>` : ''}
+              </div>
+              <span class="note">🌍 ${esc(r.country)} · ${esc(r.team)}</span>
+            </div>
+          </div>
+        </div>
+      `).join('') : `<p class="note">${currentLang === 'tr' ? 'Henüz kart oluşturulmamış. Research bölümünden canlı ekleyebilirsiniz.' : 'No cards yet. Add organisms in the Research section.'}</p>`}
+    </div>`;
+  },
+
+  // 6. GLOBAL MAP (Dünya Haritası)
+  map: () => {
+    const points = getByKind('research').concat(getByKind('local')).filter(r => r.lat != null && r.lat !== '');
+    return `
+    <div class="card">
+      <h2>🌍 ${currentLang === 'tr' ? 'Dünya Dayanıklılık Haritası' : 'Global Resilience Map'}</h2>
+      <p class="muted">${currentLang === 'tr' ? 'Farklı ülkelerdeki canlıların benzer zorluklara nasıl çözümler geliştirdiğini haritada keşfedin. Pinlere tıklayarak detayları görebilirsiniz.' : 'Explore how organisms across the globe adapt to challenges. Tap markers to inspect details.'}</p>
+      
+      <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <span class="tag" style="background:#e8f4ec; color:#2d5a37;">🟢 ${currentLang === 'tr' ? 'Araştırma Canlısı' : 'Research Organism'}</span>
+        <span class="tag" style="background:#f9ede1; color:#d97b29;">🟠 ${currentLang === 'tr' ? 'Yerel Bitki Gözlemi' : 'Local Observation'}</span>
+        <span style="flex:1;"></span>
+        <button type="button" class="btn btn-sm btn-outline" onclick="if(globalMapInstance)globalMapInstance.setView([39.0, 35.0], 5)">🇹🇷 Türkiye</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="if(globalMapInstance)globalMapInstance.setView([45.0, 15.0], 4)">🇪🇺 Avrupa</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="if(globalMapInstance)globalMapInstance.setView([30.0, 20.0], 2)">🌍 Tüm Dünya</button>
+      </div>
+
+      <div id="globalMapContainer" class="map-container-global"></div>
+    </div>
+    <div id="pinDetails"></div>`;
+  },
+
+  // 7. LOCAL HABITAT (Vatandaş Bilimi)
+  local: () => `
+    <div class="card">
+      <h2>🔍 ${currentLang === 'tr' ? 'Yerel Habitatım – Çevremdeki Bitkiler' : 'My Local Habitat – Citizen Science'}</h2>
+      <p class="muted">${currentLang === 'tr' ? 'Okul bahçenizde, parkta veya sokağınızda gözlemlediğiniz bitkileri kaydederek vatandaş bilimine katkı sağlayın.' : 'Document wild or local plants in your school garden, park, or neighbourhood.'}</p>
+      
+      <div style="background:#fff7e6; border:1px solid #ffd591; padding:10px; border-radius:var(--radius-sm); margin-bottom:14px; font-size:0.85rem;">
+        🔒 <b>${currentLang === 'tr' ? 'Gizlilik Kuralı:' : 'Privacy Rule:'}</b> ${currentLang === 'tr' ? 'Ev adresi veya kişisel bilgi girmeyin. Fotoğraflarda insan yüzü görünmemelidir.' : 'Do not enter home addresses. Photos must not show faces or personal data.'}
+      </div>
+
+      <div class="grid-cols-2">
+        <div class="form-group">
+          <label for="ln">${currentLang === 'tr' ? 'Bitkinin Adı' : 'Plant Name'}<span class="req">*</span></label>
+          <input id="ln" type="text" placeholder="örn. Karahindiba (Dandelion)">
+        </div>
+        <div class="form-group">
+          <label for="lsci">${currentLang === 'tr' ? 'Bilimsel Adı (biliyorsanız)' : 'Scientific Name'}</label>
+          <input id="lsci" type="text" placeholder="Taraxacum officinale">
+        </div>
+        <div class="form-group">
+          <label for="lcity">${currentLang === 'tr' ? 'Şehir / Bölge' : 'City / Region'}</label>
+          <input id="lcity" type="text" placeholder="Ankara / Roma">
+        </div>
+        <div class="form-group">
+          <label for="lloc">${currentLang === 'tr' ? 'Gözlem Yeri' : 'Location'}</label>
+          <input id="lloc" type="text" placeholder="Okul bahçesi, Şehir parkı, Orman">
+        </div>
+      </div>
+
+      <div class="photo-uploader">
+        <label>${t().photoUpload}</label>
+        <input id="ph" type="file" accept="image/*" onchange="handlePhotoUpload(this)">
+        <div class="photo-preview-box" id="photoPreview">
+          <img id="photoPreviewImg" src="" alt="Preview">
+          <button class="btn btn-sm btn-outline" onclick="clearPhoto()">${currentLang === 'tr' ? 'Fotoğrafı Kaldır' : 'Remove'}</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:10px;">
+        <label for="lch">${currentLang === 'tr' ? 'Hangi çevresel zorluklarla karşılaşıyor? Nasıl hayatta kalıyor?' : 'Environmental challenges & survival strategy'}</label>
+        <textarea id="lch" placeholder="Asfalt kenarında az su ile büyüme, yoğun rüzgar, ezilmeye dayanıklı gövde..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="lobs">${currentLang === 'tr' ? 'Bu bitkiden dayanıklılık hakkında ne öğrenebiliriz?' : 'What can we learn about resilience?'}</label>
+        <textarea id="lobs" placeholder="En zor koşullarda bile kök salıp çiçek açabilmek..."></textarea>
+      </div>
+
+      <h3>${t().locationPick}</h3>
+      <div class="grid-cols-2">
+        <div class="form-group"><label>Latitude</label><input id="lat" type="number" step="any"></div>
+        <div class="form-group"><label>Longitude</label><input id="lng" type="number" step="any"></div>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0;">
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(39.0, 35.0, 'Türkiye')">📍 Türkiye</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(41.9, 12.5, 'İtalya')">📍 İtalya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(40.4, -3.7, 'İspanya')">📍 İspanya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(38.0, 23.7, 'Yunanistan')">📍 Yunanistan</button>
+        <button type="button" class="btn btn-sm" style="background:var(--brand-earth); color:#fff;" onclick="getMyGPSLocation()">🛰️ GPS Konumumu Bul</button>
+      </div>
+      <p class="note">${currentLang === 'tr' ? '📍 Gözlem yerini haritadan seçmek için dokunun veya kırmızı pin\'i sürükleyin:' : '📍 Tap the map to select observation location or drag the red pin:'}</p>
+      <div id="pickerMapContainer" class="map-container-picker"></div>
+
+      <!-- KVKK & Fotoğraf Güvenliği Aydınlatması -->
+      <div class="kvkk-box">
+        <div class="kvkk-title">🔒 ${currentLang === 'tr' ? 'KVKK & Vatandaş Bilimi Güvenlik Onayı' : 'GDPR & Citizen Science Safety Confirmation'}</div>
+        <p class="kvkk-text">
+          ${currentLang === 'tr' ? 'Gözlem yeri olarak okul bahçesi, şehir parkı, orman gibi kamusal alanlar seçilmeli; ev adresi veya özel yaşam alanı kesinlikle belirtilmemelidir.' : 'Observation sites must be public areas such as school gardens or city parks; home addresses must never be used.'}
+        </p>
+        <label class="kvkk-check-label">
+          <input type="checkbox" id="kvkkLocal" required>
+          <span><b>${currentLang === 'tr' ? 'Fotoğraf & Konum Güvenliği Onayı:' : 'Photo & Location Confirmation:'}</b> ${currentLang === 'tr' ? 'Fotoğrafta insan yüzü veya özel mülk bulunmadığını, yaklaşık kamusal bir konum paylaştığımı onaylıyorum.' : 'I confirm that the photo contains no human faces or private property.'} <span class="req">*</span></span>
+        </label>
+      </div>
+
+      <div style="margin-top:16px;">
+        <button class="btn" onclick="submitLocal()">${currentLang === 'tr' ? 'Gözlemi Kaydet' : 'Submit Observation'}</button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      ${getByKind('local').map(r => `
+        <div class="card">
+          ${r.photo ? `<img src="${r.photo}" alt="" style="max-width:100%; max-height:140px; border-radius:8px; object-fit:cover; margin-bottom:8px;">` : ''}
+          <b>🌿 ${esc(r.name)}</b> ${statusBadgeHTML(r)}
+          <p class="note">${esc(r.city || '')} · ${esc(r.loc || '')} · Takım: ${esc(r.team)}</p>
+          <p>${esc(r.challenge || '')}</p>
+          <p><i>💡 ${esc(r.obs || '')}</i></p>
+          ${adminButtonsHTML(r)}
+        </div>
+      `).join('')}
+    </div>`,
+
+  // 8. DIGITAL ATLAS (Ortak Dijital Kütüphane)
+  atlas: () => {
+    const q = (window._searchQuery || '').toLowerCase();
+    const orgs = getOrganisms().filter(r => {
+      if (!q) return true;
+      const str = (r.name + ' ' + (r.sci || '') + ' ' + (r.country || '') + ' ' + (r.strategy || '')).toLowerCase();
+      return str.includes(q);
+    });
+
+    return `
+    <div class="card">
+      <h2>📚 ${currentLang === 'tr' ? 'Ortak Dijital Dayanıklılık Atlası' : 'Our Digital Resilience Atlas'}</h2>
+      <p class="muted">${currentLang === 'tr' ? 'Öğrenciler tarafından araştırılan tüm canlıların ve dayanıklılık derslerinin ortak kütüphanesi.' : 'A shared library of all organisms and resilience stories researched by international teams.'}</p>
+      
+      <div style="display:flex; gap:8px; margin:14px 0; flex-wrap:wrap;">
+        <input style="flex:1; min-width:200px;" type="text" placeholder="${t().search}" value="${esc(window._searchQuery || '')}" oninput="window._searchQuery=this.value; render(true)">
+        <button class="btn btn-secondary" onclick="exportDataCSV()">${t().exportCsv}</button>
+      </div>
+    </div>
+
+    <div>
+      ${orgs.length ? orgs.map(r => `
+        <div class="card" style="border-left: 4px solid var(--brand-green);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h3 style="margin:0; border:none;">${esc(r.name)} <i>(${esc(r.sci || (currentLang === 'tr' ? 'bilimsel ad belirtilmemiş' : 'n/a'))})</i></h3>
+              <span class="tag">${esc(r.group || 'Organism')}</span>
+              <span class="tag tag-earth">🌍 ${esc(r.country)}</span>
+            </div>
+            ${statusBadgeHTML(r)}
+          </div>
+          
+          ${r.photo ? `<img src="${r.photo}" alt="" style="max-width:100%; max-height:160px; border-radius:8px; margin:10px 0; object-fit:cover;">` : ''}
+
+          <div style="margin-top:8px; font-size:0.92rem;">
+            <p><b>Habitat:</b> ${esc(r.habitat || '—')} · <b>${currentLang === 'tr' ? 'İklim:' : 'Climate:'}</b> ${esc(r.climate || '—')}</p>
+            <p>⚠️ <b>${currentLang === 'tr' ? 'Zorluk:' : 'Challenge:'}</b> ${esc(r.challenge || '—')}</p>
+            <p>💪 <b>${currentLang === 'tr' ? 'Uyum Stratejisi:' : 'Strategy:'}</b> ${esc(r.strategy || '—')}</p>
+            ${r.power ? `<p>⚡ <b>Superpower:</b> ${esc(r.power)}</p>` : ''}
+            ${r.fact ? `<p>💡 <b>${currentLang === 'tr' ? 'İlginç Bilgi:' : 'Fact:'}</b> ${esc(r.fact)}</p>` : ''}
+          </div>
+
+          <p class="note" style="margin-top:8px;">${currentLang === 'tr' ? 'Araştıran Takım:' : 'Team:'} ${esc(r.team)}</p>
+          ${adminButtonsHTML(r)}
+        </div>
+      `).join('') : `<p class="note">${currentLang === 'tr' ? 'Aramanıza uygun kayıt bulunamadı.' : 'No matching records found.'}</p>`}
+    </div>`;
+  }
+};
+
+// --- 10. FORM GÖNDERİM FONKSİYONLARI ---
+async function submitSuggest() {
+  if (!checkTeam()) return;
+  const name = val('sn');
+  if (!name) return toast(currentLang === 'tr' ? 'Canlı adı gereklidir!' : 'Name is required!');
+  
+  const id = 's-' + slug(name);
+  const existing = recs.find(r => r.id === id);
+  if (existing) {
+    if (col && live) {
+      try {
+        await col.doc(id).update({ count: (existing.count || 1) + 1 });
+        toast('Öneri sayısı artırıldı ✓');
+      } catch(e){}
+    } else {
+      recs = recs.map(r => r.id === id ? { ...r, count: (r.count || 1) + 1 } : r);
+      saveLocal();
+      toast('Öneri sayısı artırıldı ✓');
+      render();
+    }
+  } else {
+    await saveRecord(id, {
+      kind: 'suggest',
+      name,
+      country: val('sc') || who.country,
+      group: val('sg'),
+      count: 1
+    });
+  }
+  const sn = $('#sn'); if (sn) sn.value = '';
+}
+
+async function submitResearch() {
+  if (!checkTeam()) return;
+  const name = val('rn');
+  if (!name) return toast(currentLang === 'tr' ? 'Canlı adı gereklidir!' : 'Organism name is required!');
+  
+  if (!$('#kvkkResearch')?.checked) {
+    return toast(currentLang === 'tr' ? '⚠️ Lütfen KVKK ve Fotoğraf Güvenlik Onayı kutusunu işaretleyin!' : '⚠️ Please check the Privacy & Photo Confirmation checkbox!');
+  }
+  
+  const latVal = val('lat');
+  const lngVal = val('lng');
+
+  await saveRecord('r-' + slug(name) + '-' + slug(who.team), {
+    kind: 'research',
+    name,
+    sci: val('rsci'),
+    country: val('rc') || who.country,
+    group: val('rg'),
+    photo: currentPhotoBase64,
+    habitat: val('rhab'),
+    climate: val('rcli'),
+    dist: val('rdist'),
+    env: val('renv'),
+    challenge: val('rch'),
+    strategy: val('rst'),
+    power: val('rpow'),
+    fact: val('rfct'),
+    skill: val('rsk'),
+    msg: val('rmsg'),
+    lat: latVal ? +latVal : null,
+    lng: lngVal ? +lngVal : null
+  });
+  
+  clearPhoto();
+  pickedLocation = null;
+  goToTab('atlas');
+}
+
+async function submitMeets() {
+  if (!checkTeam()) return;
+  const orgId = val('morg');
+  const org = recs.find(r => r.id === orgId);
+  if (!org) return toast(currentLang === 'tr' ? 'Lütfen bir canlı seçin' : 'Please select an organism');
+
+  await saveRecord('l-' + Date.now().toString(36), {
+    kind: 'link',
+    orgId: org.id,
+    orgName: org.name,
+    ch: val('mch'),
+    st: val('mst'),
+    lk: val('mlk'),
+    topic: val('mtp'),
+    q1: val('mq1'),
+    q2: val('mq2'),
+    q3: val('mq3')
+  });
+  render();
+}
+
+async function submitLocal() {
+  if (!checkTeam()) return;
+  const name = val('ln');
+  if (!name) return toast(currentLang === 'tr' ? 'Bitki adı gereklidir!' : 'Plant name is required!');
+
+  if (!$('#kvkkLocal')?.checked) {
+    return toast(currentLang === 'tr' ? '⚠️ Lütfen KVKK ve Fotoğraf Güvenlik Onayı kutusunu işaretleyin!' : '⚠️ Please check the Privacy & Photo Confirmation checkbox!');
+  }
+
+  const latVal = val('lat');
+  const lngVal = val('lng');
+
+  await saveRecord('p-' + Date.now().toString(36), {
+    kind: 'local',
+    name,
+    sci: val('lsci'),
+    country: who.country,
+    city: val('lcity'),
+    loc: val('lloc'),
+    photo: currentPhotoBase64,
+    challenge: val('lch'),
+    obs: val('lobs'),
+    lat: latVal ? +latVal : null,
+    lng: lngVal ? +lngVal : null
+  });
+
+  clearPhoto();
+  pickedLocation = null;
+  render();
+}
+
+// --- 11. CSV İNDİRME (Tüm Cihazlarda ve Tarayıcılarda Standart) ---
+function exportDataCSV() {
+  const rows = recs.filter(r => r.kind === 'research' && r.status === 'approved');
+  if (!rows.length) return toast(currentLang === 'tr' ? 'Dışa aktarılacak onaylı kayıt bulunamadı.' : 'No approved records to export.');
+
+  const headers = ['Name', 'Scientific_Name', 'Country', 'Group', 'Habitat', 'Challenge', 'Strategy', 'Superpower', 'Life_Skill', 'Team'];
+  const csvContent = '\ufeff' + headers.join(',') + '\n' + rows.map(r => [
+    r.name, r.sci, r.country, r.group, r.habitat, r.challenge, r.strategy, r.power, r.skill, r.team
+  ].map(field => `"${String(field ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+
+  try {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'resilience_atlas_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast(currentLang === 'tr' ? 'CSV dosyası indirildi ✓' : 'CSV exported successfully ✓');
+  } catch(e) {
+    toast('İndirme hatası: ' + e.message);
+  }
+}
+
+// --- 12. GEZİNME VE EKRAN ÇİZİMİ (Rendering) ---
+function goToTab(tabKey) {
+  cleanupMaps();
+  currentTab = tabKey;
+  pickedLocation = null;
+  renderNav();
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderNav() {
+  const navBar = $('#navBar');
+  if (!navBar) return;
+  navBar.innerHTML = t().tabs.map(tb => `
+    <button class="tab-btn ${tb[0] === currentTab ? 'active' : ''}" onclick="goToTab('${tb[0]}')">
+      ${tb[1]}
+    </button>
+  `).join('');
+}
+
+function render(keepInputFocus = false) {
+  const activeId = document.activeElement?.id;
+  const app = $('#app');
+  if (!app) return;
+  
+  if (VIEWS[currentTab]) {
+    app.innerHTML = VIEWS[currentTab]();
+  }
+
+  // Haritaları ilgili sekmede coğrafi detayla başlat
+  if (currentTab === 'map') {
+    const points = getByKind('research').concat(getByKind('local')).filter(r => r.lat != null && r.lat !== '');
+    setTimeout(() => initGlobalMap(points), 60);
+  } else if (currentTab === 'research') {
+    setTimeout(() => initPickerMap('lat', 'lng', getOrganisms().filter(r => r.lat != null)), 60);
+  } else if (currentTab === 'local') {
+    setTimeout(() => initPickerMap('lat', 'lng', getByKind('local').filter(r => r.lat != null)), 60);
+  }
+
+  if (keepInputFocus && activeId) {
+    const el = document.getElementById(activeId);
+    if (el) {
+      el.focus();
+      if (el.setSelectionRange) el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }
+}
+
+// Başlatma
+renderNav();
+initDB();
+</script>
+</body>
+</html>
