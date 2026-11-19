@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8"><title>Resilience Atlas – Dayanıklılık Atlası</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f5f1e6;--card:#fffdf7;--ink:#2b3a2e;--mut:#6b7a6c;--g:#3f7d4e;--g2:#e1ecd9;--br:#a0714a;--line:#d9d2bd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b231c;--card:#243026;--ink:#e8eee4;--mut:#a3b3a4;--g:#7fc08f;--g2:#2d3f30;--br:#d3a47a;--line:#3a4a3c}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,'Times New Roman',serif}
+header{background:var(--g);color:#fff;padding:14px 16px}header h1{margin:0;font-size:1.3rem}header small{opacity:.9;font-style:italic}
+nav{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+nav button{white-space:nowrap;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:7px 12px;border-radius:20px;font:inherit;font-size:.85rem;cursor:pointer}
+nav button.on{background:var(--g);color:#fff;border-color:var(--g)}
+main{max-width:860px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{margin:.2em 0 .4em;color:var(--g)}h3{margin:.8em 0 .3em;color:var(--br);font-size:1rem}
+label{display:block;font-size:.85rem;color:var(--mut);margin:8px 0 2px}
+input,select,textarea{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:60px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.btn{background:var(--g);color:#fff;border:0;padding:10px 16px;border-radius:8px;font:inherit;cursor:pointer;margin-top:12px}
+.btn.s{background:var(--br);padding:5px 10px;font-size:.8rem;margin:4px 4px 0 0}
+.tag{display:inline-block;background:var(--g2);border-radius:10px;padding:1px 8px;font-size:.75rem;margin-right:4px}
+.pend{background:#f3d9a4;color:#5a3d00}
+.cloud{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:center;padding:14px;min-height:90px}
+.cloud span{color:var(--g);font-weight:bold;line-height:1.1}.cloud span:nth-child(3n){color:var(--br)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.flip{perspective:800px;cursor:pointer;height:210px}.flip>div{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip.f>div{transform:rotateY(180deg)}.face{position:absolute;inset:0;backface-visibility:hidden;border:2px solid var(--g);border-radius:12px;padding:10px;background:var(--card);overflow:auto;text-align:center}
+.face.b{transform:rotateY(180deg);text-align:left;font-size:.9rem}.face img{max-width:100%;max-height:110px;border-radius:8px}
+svg.map{width:100%;background:#cfe3ea;border-radius:10px;border:1px solid var(--line);cursor:crosshair}
+.land{fill:#b9cfa4;stroke:#8aa876}
+.note{font-size:.8rem;color:var(--mut)}#msg{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;display:none;z-index:9}
+</style></head><body>
+<header><h1>🌿 RESILIENCE ATLAS – Dayanıklılık Atlası</h1><small>Nature is full of survival stories. What can we learn from them?</small></header>
+<nav id="nav"></nav><main id="app"></main><div id="msg"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TABS=[['home','Ana Sayfa'],['discover','1 Discover'],['research','2 Research'],['meets','3 Nature Meets Life'],['cards','4 Cards'],['map','5 Global Map'],['local','6 My Local Habitat'],['atlas','7 Digital Atlas']];
+let tab='home',db=null,col=null,user=null,recs=[],isTeacher=false,live=false,pick=null,lastErr='';
+let who={team:'',country:''};try{who=JSON.parse(localStorage.getItem('ra_who')||'{}')}catch(e){}
+const toast=t=>{const m=$('#msg');m.textContent=t;m.style.display='block';setTimeout(()=>m.style.display='none',2600)};
+const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9ğüşıöç]+/gi,'-').slice(0,60);
+const vis=r=>r.status==='approved'||isTeacher||r.team===who.team&&who.team;
+const by=k=>recs.filter(r=>r.kind===k&&vis(r));
+const orgs=()=>by('research');
+
+async function init(){
+ try{user=await claude.use('user');isTeacher=user?.canEdit?.()??false}catch(e){}
+ try{db=await claude.use('db')}catch(e){}
+ if(db){col=db.collection('records');live=true;
+  col.onSnapshot(s=>{recs=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>{lastErr=e.message;live=false;render()})}
+ render()}
+async function save(id,obj){
+ const rec={...obj,team:who.team,country:obj.country||who.country,status:isTeacher?'approved':'pending',at:Date.now()};
+ if(col){try{await col.doc(id).set(rec);toast(isTeacher?'Kaydedildi ✓':'Gönderildi – öğretmen onayı bekliyor ✓');return true}catch(e){toast('Kayıt hatası: '+e.message);return false}}
+ recs=recs.filter(r=>r.id!==id).concat({id,...rec});toast('Yerel olarak kaydedildi (veritabanı yok)');render();return true}
+const setStatus=(id,st)=>col?.doc(id).update({status:st});
+const delRec=id=>confirm('Silinsin mi?')&&col?.doc(id).delete();
+const val=id=>($('#'+id)?.value||'').trim();
+const fld=(id,l,t='text',ph='')=>`<div><label>${l}</label>${t==='area'?`<textarea id="${id}" placeholder="${ph}"></textarea>`:`<input id="${id}" type="${t}" placeholder="${ph}">`}</div>`;
+const sel=(id,l,o)=>`<div><label>${l}</label><select id="${id}">${o.map(x=>`<option value="${esc(x[0])}">${esc(x[1]||x[0])}</option>`).join('')}</select></div>`;
+const GROUPS=[['Plant','Bitki – Plant'],['Animal','Hayvan – Animal'],['Fungi','Mantar – Fungi'],['Other','Diğer – Other']];
+const status=r=>r.status==='approved'?'':`<span class="tag pend">⏳ onay bekliyor</span>`;
+const adminBtns=r=>isTeacher?`<button class="btn s" onclick="setStatus('${r.id}','approved')">✔ Onayla</button><button class="btn s" onclick="setStatus('${r.id}','pending')">↩ Beklet</button><button class="btn s" onclick="delRec('${r.id}')">🗑 Sil</button>`:'';
+const photoOf=r=>r.photo?`<img src="${r.photo}" alt="" style="max-width:100%;max-height:120px;border-radius:8px">`:'';
+
+function who$(){return `<div class="card"><h3>👥 Takımım – My team</h3><div class="row">
+ <div><label>Takım adı – Team name</label><input id="wt" value="${esc(who.team||'')}"></div>
+ <div><label>Ülke – Country</label><input id="wc" value="${esc(who.country||'')}"></div></div>
+ <button class="btn s" onclick="setWho()">Kaydet</button>
+ <p class="note">${live?'🟢 Ortak veritabanı bağlı':'🟠 Veritabanı bağlı değil: kayıtlar yalnızca bu oturumda tutulur.'+(lastErr?' ('+esc(lastErr)+')':'')} ${isTeacher?'· 🎓 Öğretmen modu: onay/silme yetkisi':'· Katkılar öğretmen onayından sonra herkese görünür.'}</p></div>`}
+function setWho(){who={team:val('wt'),country:val('wc')};try{localStorage.setItem('ra_who',JSON.stringify(who))}catch(e){}toast('Takım bilgisi kaydedildi');render()}
+const needWho=()=>{if(!who.team){toast('Önce takım adınızı girin');return true}};
+
+function mapSVG(pts,clickable){
+ const X=lo=>(lo+180)*2,Y=la=>(90-la)*2;
+ const land=['-168,66 -140,70 -95,72 -60,60 -55,48 -80,25 -97,16 -85,8 -105,22 -125,40 -140,58','-80,10 -60,10 -35,-6 -40,-22 -58,-38 -68,-55 -75,-30 -80,-5','-10,36 0,50 20,60 40,68 60,60 30,40 10,38','-17,20 -5,35 20,33 35,30 51,11 40,-15 20,-35 10,-5 -10,5','40,68 100,75 170,68 140,40 120,22 100,5 80,10 60,25 45,40','112,-12 153,-12 150,-38 115,-34','-55,60 -20,70 -30,82 -60,80']
+  .map(p=>`<polygon class="land" points="${p.split(' ').map(q=>{const[a,b]=q.split(',');return X(+a)+','+Y(+b)}).join(' ')}"/>`).join('');
+ let g='';for(let l=-180;l<=180;l+=30)g+=`<line x1="${X(l)}" y1="0" x2="${X(l)}" y2="360" stroke="#fff" stroke-opacity=".4"/>`;for(let l=-60;l<=60;l+=30)g+=`<line x1="0" y1="${Y(l)}" x2="720" y2="${Y(l)}" stroke="#fff" stroke-opacity=".4"/>`;
+ const dots=pts.map(r=>`<circle cx="${X(+r.lng)}" cy="${Y(+r.lat)}" r="6" fill="${r.kind==='local'?'#d97b29':'#2f6b3d'}" stroke="#fff" stroke-width="1.5" style="cursor:pointer" onclick="event.stopPropagation();showPin('${r.id}')"><title>${esc(r.name)}</title></circle>`).join('');
+ return `<svg class="map" id="map" viewBox="0 0 720 360" ${clickable?`onclick="mapClick(event)"`:''}>${land}${g}${dots}<circle id="pick" r="7" fill="red" ${pick?`cx="${X(pick.lng)}" cy="${Y(pick.lat)}"`:'display="none"'}/></svg>`}
+function mapClick(e){const s=$('#map'),b=s.getBoundingClientRect(),x=(e.clientX-b.left)/b.width*720,y=(e.clientY-b.top)/b.height*360;
+ pick={lng:+(x/2-180).toFixed(2),lat:+(90-y/2).toFixed(2)};const c=$('#pick');c.setAttribute('cx',x);c.setAttribute('cy',y);c.removeAttribute('display');
+ if($('#lat'))$('#lat').value=pick.lat;if($('#lng'))$('#lng').value=pick.lng}
+function showPin(id){const r=recs.find(x=>x.id===id);if(!r)return;$('#pin').innerHTML=`<div class="card">${photoOf(r)}<h3>${esc(r.name)} <i>${esc(r.sci||'')}</i></h3><p>🌍 ${esc(r.country)} · ${esc(r.habitat||r.location||'')}</p>${r.challenge?`<p>⚠️ ${esc(r.challenge)}</p>`:''}${r.strategy?`<p>💪 ${esc(r.strategy)}</p>`:''}<p class="note">Takım: ${esc(r.team)}</p></div>`}
+const geo=()=>`<div class="row">${fld('lat','Enlem – Latitude','number','örn. 39.9')}${fld('lng','Boylam – Longitude','number','örn. 32.8')}</div><p class="note">📍 Haritaya tıklayarak da konum seçebilirsiniz (yaklaşık konum; ev adresi girmeyin).</p>`;
+
+function readPhoto(f){return new Promise(res=>{if(!f)return res('');const im=new Image,u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,420/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.7))};im.onerror=()=>res('');im.src=u})}
+const photoFld=()=>`<div><label>📷 Fotoğraf – Photo (yüz/kişisel bilgi olmasın)</label><input id="ph" type="file" accept="image/*"></div>`;
+
+const V={
+home:()=>`<div class="card"><h2>Hoş geldiniz – Welcome</h2><p>Doğadaki canlıların zorluklarla nasıl başa çıktıklarını keşfet. Onların uyum stratejilerini araştır, kendi yaşamımızla ilişkilendir ve uluslararası Dayanıklılık Atlası'na katkıda bulun.</p>
+ <p><b>Keşfet → Araştır → Karşılaştır → Hayata Bağla → Haritaya Yerleştir → Paylaş</b></p>
+ <p class="note">Önce takımınızı tanımlayın, sonra menüden bir bölüm seçin.</p></div>${who$()}
+ <div class="grid">${TABS.slice(1).map(t=>`<div class="card" style="cursor:pointer" onclick="go('${t[0]}')"><b>${t[1]}</b><br><span class="note">${by(({discover:'suggest',research:'research',meets:'link',cards:'research',map:'research',local:'local',atlas:'research'})[t[0]]).length} kayıt</span></div>`).join('')}</div>`,
+
+discover:()=>{const s=by('suggest'),mx=Math.max(1,...s.map(r=>r.count||1));
+ return `<div class="card"><h2>Discover Our Biodiversity – Canlıları Keşfedelim</h2><div class="cloud">${s.length?s.map(r=>`<span style="font-size:${14+(r.count||1)/mx*30}px" title="${r.count||1} öneri">${esc(r.name)}</span>`).join(' '):'<i class="note">Henüz öneri yok</i>'}</div></div>
+ <div class="card"><h3>Canlı öner – Suggest an organism</h3><div class="row">${fld('n','Canlının adı – Name','text','Cactus')}${fld('c','Ülke – Country','text',who.country)}${sel('g','Canlı grubu – Group',GROUPS)}</div><button class="btn" onclick="doSuggest()">Öner – Submit</button></div>`+
+ (isTeacher?`<div class="card"><h3>Öğretmen kontrolü</h3>${recs.filter(r=>r.kind==='suggest').map(r=>`<div>${esc(r.name)} ×${r.count||1} ${status(r)} ${adminBtns(r)}</div>`).join('')}</div>`:'')},
+
+research:()=>`<div class="card"><h2>Research an Organism – Bilimsel Araştırma</h2>
+ <h3>A. Identify – Canlıyı tanıyalım</h3><div class="row">${fld('n','Organism name – Canlının adı')}${fld('sci','Scientific name – Bilimsel adı')}${fld('c','Country – Ülke','text',who.country)}${sel('g','Organism group',GROUPS)}</div>${photoFld()}
+ <h3>B. Where does it live? – Yaşam alanı</h3><div class="row">${fld('hab','Habitat')}${fld('cli','Climate – İklim')}${fld('dist','Geographical distribution – Coğrafi dağılım')}${fld('env','Environmental conditions')}</div>
+ <h3>C. What does it look like? – Fiziksel özellikleri</h3>${fld('look','Bitki: yaprak/çiçek/kök/gövde/boy · Hayvan: vücut yapısı/örtü/boyut/hareket/beslenme','area')}
+ <h3>D. Its challenges – Zorluklar</h3>${fld('challenge','Kuraklık, sıcaklık, besin yetersizliği, avcılar, habitat kaybı, rekabet…','area')}
+ <h3>E. Survival strategies – Hayatta kalma stratejileri</h3>${fld('strategy','Adaptasyon, su depolama, kamuflaj, göç, dormansi, iş birliği, yenilenme…','area')}
+ <h3>F. Superpower · G. Interesting fact · H. Sources</h3>${fld('power','⚡ Superpower – Süper gücü','area')}${fld('fact','Interesting fact – İlginç bilgi','area')}${fld('src','Sources – Kaynaklar','area')}
+ <h3>📍 Konum – Map location</h3>${geo()}${mapSVG(orgs().filter(r=>r.lat!=null),true)}
+ <h3>🃏 Resilience Card (kartın arkası)</h3>${fld('skill','Life skill – Hayat becerisi','text','Zor zamanlar için kaynaklarını korumayı öğren.')}${fld('msg','Kısa ilham mesajı – Inspiration','text')}
+ <button class="btn" onclick="doResearch()">Araştırmayı gönder – Submit</button></div>`,
+
+meets:()=>{const o=orgs();return `<div class="card"><h2>Nature Meets Life – Doğadan Hayata</h2>
+ ${sel('org','Canlı seç – Choose organism',o.length?o.map(r=>[r.id,r.name+' ('+r.country+')']):[['','— önce Research bölümünde canlı ekleyin —']])}
+ ${fld('ch','Doğadaki zorluk – Challenge in nature')}${fld('st','Canlının stratejisi – Strategy')}${fld('lk','Hayatla bağlantısı – Link to life','area','Örn. Kuraklık → su depolama → zor zamanlar için kaynaklarını korumak')}
+ ${sel('tp','Konu – Topic',[['Sınav kaygısı'],['Zorbalık'],['Göç ve uyum'],['Başarısızlık'],['Dışlanma ve aidiyet'],['Çevre sorunları'],['Diğer']])}
+ ${fld('q1','What challenge do young people face in our country?','area')}${fld('q2','How can we learn from this organism?','area')}${fld('q3','What can we do at school?','area')}
+ <button class="btn" onclick="doLink()">Gönder – Submit</button></div>
+ ${by('link').map(r=>`<div class="card"><b>${esc(r.orgName)}</b> ${status(r)} <span class="tag">${esc(r.topic)}</span><br>⚠️ ${esc(r.ch)} → 💪 ${esc(r.st)} → 🌱 ${esc(r.lk)}<br><span class="note">${esc(r.country)} · ${esc(r.team)}</span><br>${adminBtns(r)}</div>`).join('')}`},
+
+cards:()=>{const o=orgs();return `<div class="card"><h2>Resilience Cards – Dayanıklılık Kartları</h2><p class="note">Karta tıklayarak çevirin. Kart bilgileri Research formundan gelir. Her takım 3 canlı + 3 kart hazırlar.</p></div><div class="grid">${o.length?o.map(r=>`<div class="flip" onclick="this.classList.toggle('f')"><div><div class="face">${photoOf(r)}<h3>${esc(r.name)}</h3><i>${esc(r.sci||'')}</i></div><div class="face b"><b>⚡ Superpower:</b> ${esc(r.power)}<br><b>🧭 Life skill:</b> ${esc(r.skill)}<br><i>${esc(r.msg)}</i></div></div></div>`).join(''):'<p class="note">Henüz kart yok.</p>'}</div>`},
+
+map:()=>{const p=by('research').concat(by('local')).filter(r=>r.lat!=null&&r.lat!=='');
+ return `<div class="card"><h2>Global Resilience Map – Dünya Dayanıklılık Haritası</h2><label>Filtre – Filter</label><select id="flt" onchange="render()">${[['all','Hepsi'],['Plant','Bitkiler'],['Animal','Hayvanlar'],['Fungi','Mantarlar'],['drought','Kuraklık'],['cold','Soğuk'],['adapt','Uyum']].map(o=>`<option value="${o[0]}" ${window.flt===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>
+ ${mapSVG(p.filter(fltOK))}<p class="note">🟢 araştırma · 🟠 yerel gözlem — pin'e tıklayın.</p></div><div id="pin"></div>`},
+
+local:()=>`<div class="card"><h2>My Local Habitat – Çevremdeki Bitkiler</h2><p class="note">🔒 Ev adresi veya hassas konum girmeyin; yüz ve kişisel bilgi içeren fotoğraf yüklemeyin.</p>
+ <div class="row">${fld('n','Plant name – Bitkinin adı')}${fld('sci','Scientific name (biliyorsa)')}${fld('c','Country','text',who.country)}${fld('city','City / Region')}${fld('loc','Gözlem yeri (okul bahçesi, park…)')}${fld('d','Observation date','date')}</div>${photoFld()}
+ <div class="row">${fld('lf','Leaf shape / colour')}${fld('fl','Flower colour (çiçekli mi?)')}${fld('ht','Plant height')}${fld('rt','Root / stem')}</div>
+ ${sel('nat','Is it native? – Bölgenize özgü mü?',[['Evet'],['Hayır'],['Bilmiyorum']])}
+ ${fld('challenge','What environmental challenges does it face? How does it survive?','area')}${fld('strategy','Special adaptations – Özel uyumlar','area')}
+ ${fld('obs','What makes it special? What surprised you? What can we learn about resilience?','area')}${geo()}${mapSVG(by('local').filter(r=>r.lat!=null),true)}
+ <button class="btn" onclick="doLocal()">Gözlemi gönder – Submit</button></div>
+ ${by('local').map(r=>`<div class="card">${photoOf(r)}<b>${esc(r.name)}</b> ${status(r)}<br><span class="note">${esc(r.city)} · ${esc(r.loc)} · ${esc(r.date)} · ${esc(r.team)}</span><br>${esc(r.obs)}<br>${adminBtns(r)}</div>`).join('')}`,
+
+atlas:()=>{const q=(window.q||'').toLowerCase();const o=orgs().filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
+ return `<div class="card"><h2>Our Digital Atlas – Ortak Dijital Atlasımız</h2><input placeholder="🔍 Ara – Search" value="${esc(window.q||'')}" oninput="window.q=this.value;render(true)" id="qs">
+ <button class="btn s" onclick="exportCSV()">⬇ CSV indir</button></div>`+
+ o.map(r=>`<div class="card">${photoOf(r)}<h3>${esc(r.name)} <i>${esc(r.sci||'')}</i> ${status(r)}</h3><span class="tag">${esc(r.group)}</span><span class="tag">${esc(r.country)}</span>
+ <p><b>Habitat:</b> ${esc(r.habitat)} · ${esc(r.climate)}<br><b>⚠️</b> ${esc(r.challenge)}<br><b>💪</b> ${esc(r.strategy)}<br><b>⚡</b> ${esc(r.power)}<br><b>💡</b> ${esc(r.fact)}</p>
+ <p class="note">Kaynak: ${esc(r.src)} · Takım: ${esc(r.team)}</p>${by('link').filter(l=>l.orgId===r.id).map(l=>`<p>🌱 <i>${esc(l.lk)}</i></p>`).join('')}${adminBtns(r)}</div>`).join('')||'<p class="note">Kayıt yok.</p>'}
+};
+const fltOK=r=>{const f=window.flt||'all';if(f==='all')return true;if(f==='Plant'||f==='Animal'||f==='Fungi')return r.group===f;const t=((r.challenge||'')+(r.strategy||'')).toLowerCase();return f==='drought'?/drought|kurak|water|su/.test(t):f==='cold'?/cold|soğuk|kış|winter/.test(t):/adapt|uyum/.test(t)};
+
+async function doSuggest(){if(needWho())return;const n=val('n');if(!n)return toast('Canlı adı gerekli');const id='s-'+slug(n),ex=recs.find(r=>r.id===id);
+ if(ex){try{await col?.doc(id).update({count:(ex.count||1)+1});toast('Öneri sayısı artırıldı ✓')}catch(e){toast(e.message)}}
+ else await save(id,{kind:'suggest',name:n,group:val('g'),count:1})}
+async function doResearch(){if(needWho())return;const n=val('n');if(!n)return toast('Canlı adı gerekli');
+ const ph=await readPhoto($('#ph').files[0]),lat=val('lat'),lng=val('lng');
+ await save('r-'+slug(n)+'-'+slug(who.team),{kind:'research',name:n,sci:val('sci'),country:val('c'),group:val('g'),photo:ph,habitat:val('hab'),climate:val('cli'),dist:val('dist'),env:val('env'),look:val('look'),challenge:val('challenge'),strategy:val('strategy'),power:val('power'),fact:val('fact'),src:val('src'),skill:val('skill'),msg:val('msg'),lat:lat?+lat:null,lng:lng?+lng:null});go('research')}
+async function doLink(){if(needWho())return;const o=recs.find(r=>r.id===val('org'));if(!o)return toast('Canlı seçin');
+ await save('l-'+Date.now().toString(36),{kind:'link',orgId:o.id,orgName:o.name,ch:val('ch'),st:val('st'),lk:val('lk'),topic:val('tp'),q1:val('q1'),q2:val('q2'),q3:val('q3')})}
+async function doLocal(){if(needWho())return;const n=val('n');if(!n)return toast('Bitki adı gerekli');const ph=await readPhoto($('#ph').files[0]),lat=val('lat'),lng=val('lng');
+ await save('p-'+Date.now().toString(36),{kind:'local',name:n,sci:val('sci'),country:val('c'),city:val('city'),loc:val('loc'),date:val('d'),photo:ph,leaf:val('lf'),flower:val('fl'),height:val('ht'),root:val('rt'),native:val('nat'),challenge:val('challenge'),strategy:val('strategy'),obs:val('obs'),lat:lat?+lat:null,lng:lng?+lng:null})}
+async function exportCSV(){const rows=recs.filter(r=>r.kind==='research'&&r.status==='approved');const h=['name','sci','country','group','habitat','challenge','strategy','power','fact','src','team'];
+ const csv='\ufeff'+h.join(',')+'\n'+rows.map(r=>h.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+ try{const d=await claude.use('downloads');if(!d)return toast('İndirme kullanılamıyor');await d.save({filename:'resilience_atlas.csv',data:csv})}catch(e){toast('İndirilemedi')}}
+
+function go(t){tab=t;pick=null;render()}
+function render(keepFocus){const a=document.activeElement?.id;
+ $('#nav').innerHTML=TABS.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('');
+ const h=$('#app'),sc=scrollY;
+ if(['research','local'].includes(tab)&&document.querySelector('#app input,#app textarea')&&!window._force&&h.dataset.tab===tab&&!keepFocus){return} // formu snapshot'ta bozma
+ h.innerHTML=(tab==='home'?'':who$())+V[tab]();h.dataset.tab=tab;scrollTo(0,sc);
+ if(keepFocus&&a){const e=document.getElementById(a);if(e){e.focus();e.setSelectionRange?.(e.value.length,e.value.length)}}}
+const _go=go;go=function(t){window._force=true;_go(t);window._force=false};
+init();
+</script></body></html>
