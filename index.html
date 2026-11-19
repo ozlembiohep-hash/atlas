@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
@@ -1757,6 +1757,11 @@ const VIEWS = {
         <button type="button" class="btn btn-sm btn-outline" onclick="if(globalMapInstance)globalMapInstance.setView([30.0, 20.0], 2)">🌍 Tüm Dünya</button>
       </div>
 
+      <div style="text-align:right; margin-bottom:8px;">
+        <a href="https://earth.google.com/web/@42.2084394,42.77094248,0a,5399172.89614597d,35y,0h,0t,0r/data=CgRCAggCMikKJwolCiExOU9qSzRRR2tmenhZOEVLVUxDWVBDN182MVFhaVh0bEkgAToDCgEwQgIIAEoICKLb4N0CEAE?hl=tr" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="display:inline-flex;align-items:center;gap:6px;font-size:0.9rem;padding:7px 14px;border-radius:8px;background:#1a73e8;color:#fff;border:none;text-decoration:none;">
+          🌍 ${currentLang === "tr" ? "Google Earth\u0027te Görüntüle" : "Open in Google Earth"}
+        </a>
+      </div>
       <div id="globalMapContainer" class="map-container-global"></div>
     </div>
     <div id="pinDetails"></div>`;
