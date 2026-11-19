@@ -12,8 +12,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <!-- Leaflet.js (Kristal Netliğinde Gerçek Dünya Haritası) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYd9IfhAI54BJEaWIfloJ7JFs7IO8D9Tnj5QttQrGF80EQnZ46qYNPJL8Sm46XYCJf6S5svVNnoQ==" crossorigin="anonymous"></script>
 
 <style>
 /* ==========================================================================
@@ -1213,26 +1213,36 @@ function cleanupMaps() {
   }
 }
 
-function initGlobalMap(points) {
+function initGlobalMap(points, retry = 0) {
   const container = document.getElementById('globalMapContainer');
-  if (!container || typeof L === 'undefined') return;
+  if (!container) return;
+  
+  if (typeof L === 'undefined') {
+    if (retry < 10) {
+      setTimeout(() => initGlobalMap(points, retry + 1), 200);
+    }
+    return;
+  }
   
   if (globalMapInstance) {
     try { globalMapInstance.remove(); } catch(e){}
     globalMapInstance = null;
   }
+  if (container._leaflet_id) {
+    container._leaflet_id = null;
+  }
   
   globalMapInstance = L.map('globalMapContainer', {
-    center: [28, 15],
+    center: [32, 20],
     zoom: 2,
     minZoom: 1,
     maxZoom: 18,
     scrollWheelZoom: true
   });
   
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/" target="_blank">CARTO</a>',
-    subdomains: 'abcd',
+  // Güvenilir OpenStreetMap ve CartoDB katmanları
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
     maxZoom: 19
   }).addTo(globalMapInstance);
   
@@ -1246,7 +1256,7 @@ function initGlobalMap(points) {
   const greenPin = createPinIcon('#2d5a37');
   const orangePin = createPinIcon('#d97b29');
   
-  points.forEach(r => {
+  (points || []).forEach(r => {
     if (r.lat == null || r.lng == null) return;
     const icon = r.kind === 'local' ? orangePin : greenPin;
     const marker = L.marker([+r.lat, +r.lng], { icon }).addTo(globalMapInstance);
@@ -1264,24 +1274,35 @@ function initGlobalMap(points) {
     marker.on('click', () => selectMapPin(r.id));
   });
   
-  setTimeout(() => {
-    if (globalMapInstance) globalMapInstance.invalidateSize();
-  }, 120);
+  // Boyutlandırmayı peş peşe tetikle (gri kutu kalmaması için)
+  setTimeout(() => { if (globalMapInstance) globalMapInstance.invalidateSize(); }, 60);
+  setTimeout(() => { if (globalMapInstance) globalMapInstance.invalidateSize(); }, 250);
+  setTimeout(() => { if (globalMapInstance) globalMapInstance.invalidateSize(); }, 600);
 }
 
-function initPickerMap(latInputId, lngInputId, existingPoints) {
+function initPickerMap(latInputId, lngInputId, existingPoints, retry = 0) {
   const container = document.getElementById('pickerMapContainer');
-  if (!container || typeof L === 'undefined') return;
+  if (!container) return;
+  
+  if (typeof L === 'undefined') {
+    if (retry < 10) {
+      setTimeout(() => initPickerMap(latInputId, lngInputId, existingPoints, retry + 1), 200);
+    }
+    return;
+  }
   
   if (pickerMapInstance) {
     try { pickerMapInstance.remove(); } catch(e){}
     pickerMapInstance = null;
     pickerMarker = null;
   }
+  if (container._leaflet_id) {
+    container._leaflet_id = null;
+  }
   
   const startLat = pickedLocation ? pickedLocation.lat : 39.0;
   const startLng = pickedLocation ? pickedLocation.lng : 35.0;
-  const startZoom = pickedLocation ? 5 : 3;
+  const startZoom = pickedLocation ? 6 : 3;
   
   pickerMapInstance = L.map('pickerMapContainer', {
     center: [startLat, startLng],
@@ -1290,9 +1311,8 @@ function initPickerMap(latInputId, lngInputId, existingPoints) {
     maxZoom: 18
   });
   
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/" target="_blank">CARTO</a>',
-    subdomains: 'abcd',
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
     maxZoom: 19
   }).addTo(pickerMapInstance);
   
@@ -1311,9 +1331,9 @@ function initPickerMap(latInputId, lngInputId, existingPoints) {
   
   const redPinIcon = L.divIcon({
     className: 'picker-pin',
-    html: `<div style="background-color:#e02424; width:20px; height:20px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10]
+    html: `<div style="background-color:#e02424; width:22px; height:22px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 2px 7px rgba(0,0,0,0.5);"></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
   });
   
   if (pickedLocation) {
@@ -1348,9 +1368,46 @@ function initPickerMap(latInputId, lngInputId, existingPoints) {
     }
   });
   
-  setTimeout(() => {
-    if (pickerMapInstance) pickerMapInstance.invalidateSize();
-  }, 120);
+  setTimeout(() => { if (pickerMapInstance) pickerMapInstance.invalidateSize(); }, 60);
+  setTimeout(() => { if (pickerMapInstance) pickerMapInstance.invalidateSize(); }, 250);
+  setTimeout(() => { if (pickerMapInstance) pickerMapInstance.invalidateSize(); }, 600);
+}
+
+function quickSetCoords(lat, lng, label) {
+  setPickedCoords(lat, lng, 'lat', 'lng');
+  if (pickerMapInstance) {
+    pickerMapInstance.setView([lat, lng], 7);
+    const redPinIcon = L.divIcon({
+      className: 'picker-pin',
+      html: `<div style="background-color:#e02424; width:22px; height:22px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 2px 7px rgba(0,0,0,0.5);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+    if (pickerMarker) {
+      pickerMarker.setLatLng([lat, lng]);
+    } else {
+      pickerMarker = L.marker([lat, lng], { icon: redPinIcon, draggable: true }).addTo(pickerMapInstance);
+    }
+  }
+  toast(`📍 ${label} seçildi: ${lat}, ${lng}`);
+}
+
+function getMyGPSLocation() {
+  if (!navigator.geolocation) {
+    return toast(currentLang === 'tr' ? 'Tarayıcınız GPS desteklemiyor' : 'GPS not supported');
+  }
+  toast(currentLang === 'tr' ? '📍 GPS konumu alınıyor...' : '📍 Getting GPS location...');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = +pos.coords.latitude.toFixed(4);
+      const lng = +pos.coords.longitude.toFixed(4);
+      quickSetCoords(lat, lng, currentLang === 'tr' ? 'Cihaz Konumunuz' : 'Your Location');
+    },
+    err => {
+      toast(currentLang === 'tr' ? 'Konum izni verilmedi veya alınamadı' : 'Could not get location');
+    },
+    { timeout: 8000 }
+  );
 }
 
 function setPickedCoords(lat, lng, latId, lngId) {
@@ -1359,7 +1416,6 @@ function setPickedCoords(lat, lng, latId, lngId) {
   const lngEl = document.getElementById(lngId || 'lng');
   if (latEl) latEl.value = pickedLocation.lat;
   if (lngEl) lngEl.value = pickedLocation.lng;
-  toast((currentLang === 'tr' ? '📍 Konum seçildi: ' : '📍 Location selected: ') + pickedLocation.lat + ', ' + pickedLocation.lng);
 }
 
 function selectMapPin(id) {
@@ -1549,7 +1605,15 @@ const VIEWS = {
         <div class="form-group"><label>Latitude (Enlem)</label><input id="lat" type="number" step="any" placeholder="örn. 39.9"></div>
         <div class="form-group"><label>Longitude (Boylam)</label><input id="lng" type="number" step="any" placeholder="örn. 32.8"></div>
       </div>
-      <p class="note">${currentLang === 'tr' ? '📍 Konum seçmek için haritada istediğiniz noktaya dokunun veya kırmızı pin\'i sürükleyin:' : '📍 Tap the map to select a location or drag the red pin:'}</p>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0;">
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(39.0, 35.0, 'Türkiye')">📍 Türkiye</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(41.9, 12.5, 'İtalya')">📍 İtalya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(40.4, -3.7, 'İspanya')">📍 İspanya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(38.0, 23.7, 'Yunanistan')">📍 Yunanistan</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(60.0, 10.0, 'Norveç')">📍 Norveç</button>
+        <button type="button" class="btn btn-sm" style="background:var(--brand-earth); color:#fff;" onclick="getMyGPSLocation()">🛰️ GPS Konumumu Bul</button>
+      </div>
+      <p class="note">${currentLang === 'tr' ? '📍 Haritada istediğiniz noktaya dokunarak da konumu ayarlayabilirsiniz:' : '📍 Tap anywhere on the map to set location:'}</p>
       <div id="pickerMapContainer" class="map-container-picker"></div>
 
       <!-- KVKK & Fotoğraf Güvenliği Aydınlatması -->
@@ -1684,9 +1748,13 @@ const VIEWS = {
       <h2>🌍 ${currentLang === 'tr' ? 'Dünya Dayanıklılık Haritası' : 'Global Resilience Map'}</h2>
       <p class="muted">${currentLang === 'tr' ? 'Farklı ülkelerdeki canlıların benzer zorluklara nasıl çözümler geliştirdiğini haritada keşfedin. Pinlere tıklayarak detayları görebilirsiniz.' : 'Explore how organisms across the globe adapt to challenges. Tap markers to inspect details.'}</p>
       
-      <div style="margin-bottom:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <span class="tag" style="background:#e8f4ec; color:#2d5a37;">🟢 ${currentLang === 'tr' ? 'Araştırma Canlısı' : 'Research Organism'}</span>
         <span class="tag" style="background:#f9ede1; color:#d97b29;">🟠 ${currentLang === 'tr' ? 'Yerel Bitki Gözlemi' : 'Local Observation'}</span>
+        <span style="flex:1;"></span>
+        <button type="button" class="btn btn-sm btn-outline" onclick="if(globalMapInstance)globalMapInstance.setView([39.0, 35.0], 5)">🇹🇷 Türkiye</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="if(globalMapInstance)globalMapInstance.setView([45.0, 15.0], 4)">🇪🇺 Avrupa</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="if(globalMapInstance)globalMapInstance.setView([30.0, 20.0], 2)">🌍 Tüm Dünya</button>
       </div>
 
       <div id="globalMapContainer" class="map-container-global"></div>
@@ -1746,6 +1814,13 @@ const VIEWS = {
       <div class="grid-cols-2">
         <div class="form-group"><label>Latitude</label><input id="lat" type="number" step="any"></div>
         <div class="form-group"><label>Longitude</label><input id="lng" type="number" step="any"></div>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0;">
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(39.0, 35.0, 'Türkiye')">📍 Türkiye</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(41.9, 12.5, 'İtalya')">📍 İtalya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(40.4, -3.7, 'İspanya')">📍 İspanya</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="quickSetCoords(38.0, 23.7, 'Yunanistan')">📍 Yunanistan</button>
+        <button type="button" class="btn btn-sm" style="background:var(--brand-earth); color:#fff;" onclick="getMyGPSLocation()">🛰️ GPS Konumumu Bul</button>
       </div>
       <p class="note">${currentLang === 'tr' ? '📍 Gözlem yerini haritadan seçmek için dokunun veya kırmızı pin\'i sürükleyin:' : '📍 Tap the map to select observation location or drag the red pin:'}</p>
       <div id="pickerMapContainer" class="map-container-picker"></div>
