@@ -11,6 +11,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+<!-- Leaflet.js (Kristal Netliğinde Gerçek Dünya Haritası) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
 /* ==========================================================================
    CSS TASARIM SİSTEMİ - Sade, Doğal, Hızlı ve Erişilebilir (Botanical Theme)
@@ -480,24 +484,37 @@ textarea {
   margin-top: 4px;
 }
 
-/* SVG Dünya Haritası */
-.map-wrapper {
-  position: relative;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  background: #d4e8ee;
-}
-svg.world-map {
+/* Gerçek Coğrafi Harita Konteynerleri */
+.map-container-global {
   width: 100%;
-  height: auto;
-  display: block;
-  cursor: crosshair;
+  height: 520px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
 }
-.land-mass {
-  fill: #b3cfa5;
-  stroke: #86a674;
-  stroke-width: 0.8;
+.map-container-picker {
+  width: 100%;
+  height: 350px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+  margin-top: 8px;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-family: inherit;
+  padding: 4px;
+}
+.leaflet-popup-content {
+  margin: 10px 12px;
+  line-height: 1.4;
+}
+.leaflet-container {
+  font-family: inherit;
+  background-color: #e4eff2;
 }
 
 /* Fotoğraf Yükleme ve Önizleme */
@@ -519,6 +536,45 @@ svg.world-map {
   height: 70px;
   object-fit: cover;
   border-radius: 6px;
+}
+
+/* KVKK & Veri Güvenliği Aydınlatma Kutusu */
+.kvkk-box {
+  background: #fdfbee;
+  border: 1px solid #fae8a4;
+  border-left: 4px solid #d49e1a;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 14px 0;
+  font-size: 0.88rem;
+}
+.kvkk-title {
+  font-weight: 700;
+  color: #7d5904;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kvkk-text {
+  color: #594711;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+.kvkk-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #3b2f0a;
+}
+.kvkk-check-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
 /* Durum Bildirimleri (Toast) */
@@ -748,12 +804,178 @@ const getByKind = kind => recs.filter(r => r.kind === kind && isVisible(r));
 const getOrganisms = () => getByKind('research');
 
 // --- 4. VERİTABANI & DEPOLAMA (Firebase + LocalStorage Fallback) ---
+const DEMO_RECORDS = [
+  // A. Kelime Bulutu Önerileri
+  { id: 's-zeytin', kind: 'suggest', name: 'Zeytin Ağacı (Olive Tree)', country: 'Türkiye / Greece', group: 'Plant', count: 9, status: 'approved' },
+  { id: 's-tardigrade', kind: 'suggest', name: 'Su Ayısı (Tardigrade)', country: 'İtalya / Global', group: 'Animal', count: 12, status: 'approved' },
+  { id: 's-kaktus', kind: 'suggest', name: 'Dikenli Kaktüs (Cactus)', country: 'İspanya / Mexico', group: 'Plant', count: 7, status: 'approved' },
+  { id: 's-kutupayisi', kind: 'suggest', name: 'Kutup Ayısı (Polar Bear)', country: 'Norveç / Arktik', group: 'Animal', count: 6, status: 'approved' },
+  { id: 's-lotus', kind: 'suggest', name: 'Lotus Çiçeği (Lotus)', country: 'India / Global', group: 'Plant', count: 8, status: 'approved' },
+  { id: 's-karahindiba', kind: 'suggest', name: 'Karahindiba (Dandelion)', country: 'Germany / Poland', group: 'Plant', count: 5, status: 'approved' },
+  { id: 's-cam', kind: 'suggest', name: 'Kızılçam (Pine Tree)', country: 'Türkiye', group: 'Plant', count: 4, status: 'approved' },
+  { id: 's-ahtapot', kind: 'suggest', name: 'Ahtapot (Octopus)', country: 'Portugal / Greece', group: 'Animal', count: 5, status: 'approved' },
+
+  // B. Canlı Araştırmaları (Araştırma Profilleri, 3D Kartlar & Harita Pinleri)
+  {
+    id: 'r-zeytin-agaci',
+    kind: 'research',
+    name: 'Zeytin Ağacı (Olive Tree)',
+    sci: 'Olea europaea',
+    country: 'Türkiye / Greece',
+    group: 'Plant',
+    photo: 'https://images.unsplash.com/photo-1541443131876-44b03de101c5?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Akdeniz Makilikleri ve Kayalık Yamaçlar',
+    climate: 'Sıcak, kurak yazlar ve ılıman kışlar',
+    dist: 'Akdeniz Havzası (Türkiye, İtalya, İspanya, Yunanistan)',
+    env: 'Aşırı kuraklık, kireçli ve taşlık zemin, yoğun güneş',
+    challenge: 'Aylarca süren kavurucu yaz kuraklığı, su kıtlığı ve fakir kayalık topraklar.',
+    strategy: 'Toprağın metrelerce derinine inen kök ağı, su kaybını önleyen gümüşi tüylü ve mumsu yaprak tabakası, gövdesinde nem depolama.',
+    power: 'Yüzyıllarca, hatta bin yıl boyunca susuz kayalıkta kök salıp her bahar yeniden yeşerebilme ve meyve verebilme.',
+    fact: 'Zeytin ağaçları gövdesi yansa bile köklerinden yeni filizler vererek hayata dönebilir. Akdeniz\'de 2000 yaşında yaşayan ağaçlar vardır.',
+    skill: 'Köklerin (değerlerin ve bilgin) ne kadar derindeyse, fırtınalara o kadar sağlam direnirsin.',
+    msg: 'Zorluklar geçicidir; sabırla kök sal, zamanı geldiğinde yeniden çiçek açacaksın.',
+    lat: 38.4237,
+    lng: 27.1428,
+    team: 'Gaia Protectors',
+    status: 'approved'
+  },
+  {
+    id: 'r-tardigrade',
+    kind: 'research',
+    name: 'Su Ayısı (Tardigrade)',
+    sci: 'Milnesium tardigradum',
+    country: 'İtalya / Global',
+    group: 'Animal',
+    photo: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Nemli yosunlar, likenler, kutup buzulları ve okyanus tabanları',
+    climate: 'Aşırı uç iklimler (-200°C dondurucu soğuktan +150°C sıcağa)',
+    dist: 'Dünya geneli tüm ekosistemler',
+    env: 'Aşırı radyasyon, mutlak kuruluk, uzay vakumu basıncı',
+    challenge: 'Ortamdaki suyun tamamen buharlaşması, dondurucu kutup soğuğu ve ölümcül radyasyon.',
+    strategy: 'Kriptobiyoz (askıya alınmış yaşam): Vücudundaki su oranını %1\'e indirir, metabolizmasını durdurur ve hücrelerini camlaşan koruyucu proteinlerle zırhlar.',
+    power: 'Uzay boşluğunda açıkta günlerce hayatta kalabilen ve bir damla suyla saatler içinde canlanan tek canlı.',
+    fact: 'Su ayıları 30 yıl boyunca tamamen donmuş veya kuru halde kaldıktan sonra suya kavuşunca uyanabilir.',
+    skill: 'Şartlar çok ağırlaştığında geri çekilip dinlenmek pes etmek değildir; enerjini toplayıp doğru zamanda yeniden başlamaktır.',
+    msg: 'Tükenmiş hissettiğinde kendine mola ver; yeniden canlanma gücü senin içinde saklı.',
+    lat: 41.9028,
+    lng: 12.4964,
+    team: 'BioResilience Roma',
+    status: 'approved'
+  },
+  {
+    id: 'r-kaktus',
+    kind: 'research',
+    name: 'Dikenli Kaktüs (Prickly Pear)',
+    sci: 'Opuntia ficus-indica',
+    country: 'İspanya / Mexico',
+    group: 'Plant',
+    photo: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Kurak çöller, kayalık kurak platolar',
+    climate: 'Aşırı sıcak, çöl iklimi, çok düşük yağış',
+    dist: 'Akdeniz kıyıları, Güney Amerika, İber Yarımadası',
+    env: 'Gündüz 45°C kavurucu sıcak, gece soğuk, susuzluk',
+    challenge: 'Buharlaşma ile aşırı su kaybı riski ve otobur hayvanların gövdeyi yeme tehdidi.',
+    strategy: 'Yapraklarını dikenlere dönüştürerek su kaybını sıfırlamak, kalın etli gövdesinde tonlarca su saklamak, gece serinliğinde gözenek açmak.',
+    power: 'Aylarca tek bir damla yağmur yağmasa bile sulu ve canlı kalabilme gücü.',
+    fact: 'Dikenleri sabah çiğini üzerinde yoğuşturarak köklerine damlatan birer mikro su toplayıcıdır.',
+    skill: 'Zor zamanlara hazırlıklı ol; elindeki kaynakları ve enerjini dikkatli kullan, sınırlarını korumayı öğren.',
+    msg: 'Dikenlerin sınırların, gövden dayanıklılığın olsun.',
+    lat: 40.4168,
+    lng: -3.7038,
+    team: 'EcoWarriors Madrid',
+    status: 'approved'
+  },
+  {
+    id: 'r-kutup-ayisi',
+    kind: 'research',
+    name: 'Kutup Ayısı (Polar Bear)',
+    sci: 'Ursus maritimus',
+    country: 'Norveç / Arktik',
+    group: 'Animal',
+    photo: 'https://images.unsplash.com/photo-1589656966895-2f33e7653819?auto=format&fit=crop&w=500&q=75',
+    habitat: 'Arktik deniz buzulları ve buz çölleri',
+    climate: 'Kutup iklimi (-40°C dondurucu fırtınalar)',
+    dist: 'Kuzey Kutup Dairesi',
+    env: 'Sürekli buz, dondurucu okyanus suyu, kış karanlığı',
+    challenge: 'Hipotermi tehlikesi, av kıtlığı ve buzulların erimesiyle uzayan yüzme mesafeleri.',
+    strategy: 'İçi boş liflerden oluşan şeffaf kürk güneş ışığını siyah derisine iletir; 10 cm kalınlığındaki yağ tabakası sıfır ısı kaybı sağlar.',
+    power: 'Dondurucu suda saatlerce yüzebilme ve karda ısı kaybetmeden uyuyabilme.',
+    fact: 'Tüyleri aslında beyaz değildir, şeffaf ve içi boştur; derisi ise güneş ısısını emmek için tamamen siyahtır.',
+    skill: 'Çevrendeki koşullar ne kadar soğuk ve zorlayıcı olursa olsun, içindeki sıcaklığı ve enerjini muhafaza et.',
+    msg: 'Soğuk rüzgarlar seni yıldırmasın, güçlü bir yalıtım ve inanç her engeli aşar.',
+    lat: 69.6492,
+    lng: 18.9553,
+    team: 'Arctic Explorers',
+    status: 'approved'
+  },
+
+  // C. Doğadan Hayata Köprüleri (Nature Meets Life)
+  {
+    id: 'l-kuraklik-sinav',
+    kind: 'link',
+    orgId: 'r-kaktus',
+    orgName: 'Dikenli Kaktüs (Prickly Pear)',
+    ch: 'Kuraklık ve su kıtlığı',
+    st: 'Suyu gövdede depolamak ve gereksiz tüketimi kısmak',
+    lk: 'Sınav dönemlerinde veya zor haftalarda enerjini boşa harcamamak, uyku ve zihin sağlığını korumak',
+    topic: 'Sınav kaygısı',
+    q1: 'Öğrenciler sınav haftalarında uykusuzluk, aşırı stres ve tükenmişlik yaşıyor.',
+    q2: 'Kaktüs gibi enerjimizi doğru zamanda kullanmalı, gereksiz dikkat dağıtıcıları kısmalıyız.',
+    q3: 'Okulda sınav öncesi akran dayanışması ve nefes egzersizi molaları düzenleyebiliriz.',
+    country: 'Türkiye',
+    team: 'Gaia Protectors',
+    status: 'approved'
+  },
+  {
+    id: 'l-zeytin-zorbalik',
+    kind: 'link',
+    orgId: 'r-zeytin-agaci',
+    orgName: 'Zeytin Ağacı (Olive Tree)',
+    ch: 'Kayalık ve fırtınalı arazide kök tutunamama riski',
+    st: 'Köklerini derin kayalıklara kenetlemek ve dayanışmak',
+    lk: 'Zorbalık ve dışlanma karşısında sağlam arkadaşlık bağları ve öz saygı kökleri oluşturmak',
+    topic: 'Zorbalık',
+    q1: 'Okulda bazı öğrenciler kendini yalnız veya baskı altında hissedebiliyor.',
+    q2: 'Zeytin ağacı gibi sağlam durmak ve tek başına değil, diğer ağaçlarla birbirine kenetlenmek.',
+    q3: 'Okulumuzda akran elçileri oluşturarak zorbalığa karşı ortak duruş sergileyebiliriz.',
+    country: 'İtalya',
+    team: 'BioResilience Roma',
+    status: 'approved'
+  },
+
+  // D. Yerel Habitat Gözlemi (Vatandaş Bilimi)
+  {
+    id: 'p-okul-karahindiba',
+    kind: 'local',
+    name: 'Karahindiba (Dandelion)',
+    sci: 'Taraxacum officinale',
+    country: 'Türkiye',
+    city: 'Ankara',
+    loc: 'Okul Bahçesi - Kaldırım yarığı',
+    photo: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=75',
+    challenge: 'Asfalt ve beton kenarında susuzluk, öğrencilerin basması ve yoğun toz.',
+    obs: 'Toprağın neredeyse hiç olmadığı bir kaldırım çatlağından sarı bir çiçek açması beni çok etkiledi. Kökü çok derine iniyor ve tohumlarını rüzgarla yüzlerce metreye uçurabiliyor.',
+    lat: 39.9208,
+    lng: 32.8541,
+    team: 'Gaia Protectors',
+    status: 'approved'
+  }
+];
+
 function loadLocal() {
   try {
     const d = localStorage.getItem('ra_records_v2');
-    if (d) recs = JSON.parse(d);
-  } catch(e){}
+    if (d && JSON.parse(d).length > 0) {
+      recs = JSON.parse(d);
+    } else {
+      recs = [...DEMO_RECORDS];
+      saveLocal();
+    }
+  } catch(e){
+    recs = [...DEMO_RECORDS];
+  }
 }
+
 function saveLocal() {
   try {
     localStorage.setItem('ra_records_v2', JSON.stringify(recs));
@@ -768,11 +990,23 @@ async function initDB() {
       db = firebase.firestore();
       col = db.collection('records');
       live = true;
-      col.onSnapshot(snap => {
-        recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        saveLocal();
-        render();
+      
+      col.onSnapshot(async snap => {
+        if (snap.empty) {
+          // Firebase koleksiyonu ilk açıldığında boşsa demo verilerini yükle
+          recs = [...DEMO_RECORDS];
+          saveLocal();
+          render();
+          for (const item of DEMO_RECORDS) {
+            try { await col.doc(item.id).set(item); } catch(err){}
+          }
+        } else {
+          recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          saveLocal();
+          render();
+        }
       }, err => {
+        console.warn('Firebase bağlantı uyarısı:', err);
         live = false;
         loadLocal();
         render();
@@ -780,11 +1014,12 @@ async function initDB() {
     } catch(e) {
       live = false;
       loadLocal();
+      render();
     }
   } else {
     loadLocal();
+    render();
   }
-  render();
 }
 
 async function saveRecord(id, obj) {
@@ -961,69 +1196,170 @@ const adminButtonsHTML = r => isTeacher ? `
     <button class="btn btn-sm btn-outline" style="color:#b73434;" onclick="deleteRecord('${r.id}')">${t().delete}</button>
   </div>` : '';
 
-// --- 8. HARİTA BİLEŞENİ (Dokunmatik & Tıklanabilir SVG Harita) ---
-function renderMapSVG(points, clickable = false) {
-  const X = lon => (lon + 180) * 2;
-  const Y = lat => (90 - lat) * 2;
-  
-  // Basitleştirilmiş Dünya Kıtaları Vektörü
-  const landCoords = [
-    '-168,66 -140,70 -95,72 -60,60 -55,48 -80,25 -97,16 -85,8 -105,22 -125,40 -140,58',
-    '-80,10 -60,10 -35,-6 -40,-22 -58,-38 -68,-55 -75,-30 -80,-5',
-    '-10,36 0,50 20,60 40,68 60,60 30,40 10,38',
-    '-17,20 -5,35 20,33 35,30 51,11 40,-15 20,-35 10,-5 -10,5',
-    '40,68 100,75 170,68 140,40 120,22 100,5 80,10 60,25 45,40',
-    '112,-12 153,-12 150,-38 115,-34',
-    '-55,60 -20,70 -30,82 -60,80'
-  ].map(poly => `<polygon class="land-mass" points="${poly.split(' ').map(pt => {
-    const [lo, la] = pt.split(',');
-    return `${X(+lo)},${Y(+la)}`;
-  }).join(' ')}" />`).join('');
+// --- 8. HARİTA BİLEŞENİ (Leaflet.js Coğrafi Dünya Haritası) ---
+let globalMapInstance = null;
+let pickerMapInstance = null;
+let pickerMarker = null;
 
-  // Enlem / Boylam Izgarası
-  let gridLines = '';
-  for (let l = -180; l <= 180; l += 30) gridLines += `<line x1="${X(l)}" y1="0" x2="${X(l)}" y2="360" stroke="#ffffff" stroke-opacity="0.35" />`;
-  for (let l = -60; l <= 60; l += 30) gridLines += `<line x1="0" y1="${Y(l)}" x2="720" y2="${Y(l)}" stroke="#ffffff" stroke-opacity="0.35" />`;
-
-  // Canlı Pinleri
-  const pins = points.map(r => {
-    const color = r.kind === 'local' ? '#d97b29' : '#2d5a37';
-    return `
-      <circle cx="${X(+r.lng)}" cy="${Y(+r.lat)}" r="7" fill="${color}" stroke="#ffffff" stroke-width="2" style="cursor:pointer;" onclick="event.stopPropagation(); selectMapPin('${r.id}')">
-        <title>${esc(r.name)} (${esc(r.country)})</title>
-      </circle>`;
-  }).join('');
-
-  const pickPin = pickedLocation ? `<circle cx="${X(pickedLocation.lng)}" cy="${Y(pickedLocation.lat)}" r="8" fill="#e02424" stroke="#ffffff" stroke-width="2" />` : '';
-
-  return `
-  <div class="map-wrapper">
-    <svg class="world-map" id="worldMapSvg" viewBox="0 0 720 360" ${clickable ? 'onclick="onMapClick(event)"' : ''}>
-      ${landCoords}
-      ${gridLines}
-      ${pins}
-      ${pickPin}
-    </svg>
-  </div>`;
+function cleanupMaps() {
+  if (globalMapInstance) {
+    try { globalMapInstance.remove(); } catch(e){}
+    globalMapInstance = null;
+  }
+  if (pickerMapInstance) {
+    try { pickerMapInstance.remove(); } catch(e){}
+    pickerMapInstance = null;
+    pickerMarker = null;
+  }
 }
 
-function onMapClick(e) {
-  const mapSvg = $('#worldMapSvg');
-  if (!mapSvg) return;
-  const rect = mapSvg.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width * 720;
-  const y = (e.clientY - rect.top) / rect.height * 360;
+function initGlobalMap(points) {
+  const container = document.getElementById('globalMapContainer');
+  if (!container || typeof L === 'undefined') return;
   
-  pickedLocation = {
-    lng: +(x / 2 - 180).toFixed(2),
-    lat: +(90 - y / 2).toFixed(2)
-  };
+  if (globalMapInstance) {
+    try { globalMapInstance.remove(); } catch(e){}
+    globalMapInstance = null;
+  }
   
-  if ($('#lat')) $('#lat').value = pickedLocation.lat;
-  if ($('#lng')) $('#lng').value = pickedLocation.lng;
+  globalMapInstance = L.map('globalMapContainer', {
+    center: [28, 15],
+    zoom: 2,
+    minZoom: 1,
+    maxZoom: 18,
+    scrollWheelZoom: true
+  });
   
-  toast(currentLang === 'tr' ? `📍 Konum seçildi: ${pickedLocation.lat}, ${pickedLocation.lng}` : `📍 Location set: ${pickedLocation.lat}, ${pickedLocation.lng}`);
-  render();
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/" target="_blank">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(globalMapInstance);
+  
+  const createPinIcon = (color) => L.divIcon({
+    className: 'custom-map-pin',
+    html: `<div style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 2px 5px rgba(0,0,0,0.4);"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  });
+  
+  const greenPin = createPinIcon('#2d5a37');
+  const orangePin = createPinIcon('#d97b29');
+  
+  points.forEach(r => {
+    if (r.lat == null || r.lng == null) return;
+    const icon = r.kind === 'local' ? orangePin : greenPin;
+    const marker = L.marker([+r.lat, +r.lng], { icon }).addTo(globalMapInstance);
+    
+    const popupHTML = `
+      <div style="font-family:inherit; max-width:240px; font-size:0.88rem;">
+        ${r.photo ? `<img src="${r.photo}" style="width:100%; height:90px; object-fit:cover; border-radius:6px; margin-bottom:6px;">` : ''}
+        <h4 style="margin:0 0 2px; color:#2d5a37; font-size:0.95rem;">${esc(r.name)} <i style="font-size:0.8rem; color:#666;">${esc(r.sci || '')}</i></h4>
+        <p style="margin:2px 0;">🌍 <b>${esc(r.country || '')}</b> · ${esc(r.habitat || r.loc || '')}</p>
+        ${r.challenge ? `<p style="margin:3px 0;">⚠️ <b>${currentLang==='tr'?'Zorluk:':'Challenge:'}</b> ${esc(r.challenge)}</p>` : ''}
+        ${r.strategy ? `<p style="margin:3px 0;">💪 <b>${currentLang==='tr'?'Strateji:':'Strategy:'}</b> ${esc(r.strategy)}</p>` : ''}
+        <p style="margin:4px 0 0; font-size:0.75rem; color:#888;">${currentLang==='tr'?'Takım:':'Team:'} ${esc(r.team)}</p>
+      </div>`;
+    marker.bindPopup(popupHTML);
+    marker.on('click', () => selectMapPin(r.id));
+  });
+  
+  setTimeout(() => {
+    if (globalMapInstance) globalMapInstance.invalidateSize();
+  }, 120);
+}
+
+function initPickerMap(latInputId, lngInputId, existingPoints) {
+  const container = document.getElementById('pickerMapContainer');
+  if (!container || typeof L === 'undefined') return;
+  
+  if (pickerMapInstance) {
+    try { pickerMapInstance.remove(); } catch(e){}
+    pickerMapInstance = null;
+    pickerMarker = null;
+  }
+  
+  const startLat = pickedLocation ? pickedLocation.lat : 39.0;
+  const startLng = pickedLocation ? pickedLocation.lng : 35.0;
+  const startZoom = pickedLocation ? 5 : 3;
+  
+  pickerMapInstance = L.map('pickerMapContainer', {
+    center: [startLat, startLng],
+    zoom: startZoom,
+    minZoom: 1,
+    maxZoom: 18
+  });
+  
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/" target="_blank">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(pickerMapInstance);
+  
+  if (existingPoints && existingPoints.length) {
+    existingPoints.forEach(p => {
+      if (p.lat == null || p.lng == null) return;
+      L.circleMarker([+p.lat, +p.lng], {
+        radius: 5,
+        fillColor: '#2d5a37',
+        color: '#ffffff',
+        weight: 1,
+        fillOpacity: 0.6
+      }).addTo(pickerMapInstance).bindTooltip(esc(p.name));
+    });
+  }
+  
+  const redPinIcon = L.divIcon({
+    className: 'picker-pin',
+    html: `<div style="background-color:#e02424; width:20px; height:20px; border-radius:50%; border:3px solid #ffffff; box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
+  
+  if (pickedLocation) {
+    pickerMarker = L.marker([pickedLocation.lat, pickedLocation.lng], {
+      icon: redPinIcon,
+      draggable: true
+    }).addTo(pickerMapInstance);
+    
+    pickerMarker.on('dragend', function(e) {
+      const coord = e.target.getLatLng();
+      setPickedCoords(coord.lat, coord.lng, latInputId, lngInputId);
+    });
+  }
+  
+  pickerMapInstance.on('click', function(e) {
+    const lat = +e.latlng.lat.toFixed(4);
+    const lng = +e.latlng.lng.toFixed(4);
+    setPickedCoords(lat, lng, latInputId, lngInputId);
+    
+    if (pickerMarker) {
+      pickerMarker.setLatLng([lat, lng]);
+    } else {
+      pickerMarker = L.marker([lat, lng], {
+        icon: redPinIcon,
+        draggable: true
+      }).addTo(pickerMapInstance);
+      
+      pickerMarker.on('dragend', function(ev) {
+        const coord = ev.target.getLatLng();
+        setPickedCoords(coord.lat, coord.lng, latInputId, lngInputId);
+      });
+    }
+  });
+  
+  setTimeout(() => {
+    if (pickerMapInstance) pickerMapInstance.invalidateSize();
+  }, 120);
+}
+
+function setPickedCoords(lat, lng, latId, lngId) {
+  pickedLocation = { lat: +lat.toFixed(4), lng: +lng.toFixed(4) };
+  const latEl = document.getElementById(latId || 'lat');
+  const lngEl = document.getElementById(lngId || 'lng');
+  if (latEl) latEl.value = pickedLocation.lat;
+  if (lngEl) lngEl.value = pickedLocation.lng;
+  toast((currentLang === 'tr' ? '📍 Konum seçildi: ' : '📍 Location selected: ') + pickedLocation.lat + ', ' + pickedLocation.lng);
 }
 
 function selectMapPin(id) {
@@ -1213,8 +1549,20 @@ const VIEWS = {
         <div class="form-group"><label>Latitude (Enlem)</label><input id="lat" type="number" step="any" placeholder="örn. 39.9"></div>
         <div class="form-group"><label>Longitude (Boylam)</label><input id="lng" type="number" step="any" placeholder="örn. 32.8"></div>
       </div>
-      <p class="note">${currentLang === 'tr' ? '📍 Yaklaşık konum seçmek için aşağıdaki haritaya dokunabilirsiniz:' : '📍 Tap the map below to select an approximate location:'}</p>
-      ${renderMapSVG(getOrganisms().filter(r => r.lat != null), true)}
+      <p class="note">${currentLang === 'tr' ? '📍 Konum seçmek için haritada istediğiniz noktaya dokunun veya kırmızı pin\'i sürükleyin:' : '📍 Tap the map to select a location or drag the red pin:'}</p>
+      <div id="pickerMapContainer" class="map-container-picker"></div>
+
+      <!-- KVKK & Fotoğraf Güvenliği Aydınlatması -->
+      <div class="kvkk-box">
+        <div class="kvkk-title">🔒 ${currentLang === 'tr' ? 'KVKK & eTwinning Veri Güvenliği Aydınlatması' : 'GDPR & eTwinning Privacy Notice'}</div>
+        <p class="kvkk-text">
+          ${currentLang === 'tr' ? 'Öğrenci güvenliği gereği; yüklediğiniz fotoğrafta <b>öğrenci yüzü, okul forması, isim/logo veya ev adresi</b> bulunmamalıdır. Haritada ev konumu yerine sadece genel şehir veya bölge seçilmelidir.' : 'In compliance with student safety; uploaded photos must <b>not include human faces, uniforms, names, or home addresses</b>. Only public parks, school gardens or general cities should be mapped.'}
+        </p>
+        <label class="kvkk-check-label">
+          <input type="checkbox" id="kvkkResearch" required>
+          <span><b>${currentLang === 'tr' ? 'Fotoğraf & Güvenlik Onayı:' : 'Photo & Privacy Confirmation:'}</b> ${currentLang === 'tr' ? 'Yüklediğim fotoğrafta kişisel veri/yüz bulunmadığını, bilimsel amaçlı ve proje kurallarına uygun olduğunu onaylıyorum.' : 'I confirm that the photo contains no faces or personal data and complies with project rules.'} <span class="req">*</span></span>
+        </label>
+      </div>
 
       <div style="margin-top:16px;">
         <button class="btn" onclick="submitResearch()">${currentLang === 'tr' ? 'Araştırmayı Atlasa Gönder' : 'Submit Research'}</button>
@@ -1341,7 +1689,7 @@ const VIEWS = {
         <span class="tag" style="background:#f9ede1; color:#d97b29;">🟠 ${currentLang === 'tr' ? 'Yerel Bitki Gözlemi' : 'Local Observation'}</span>
       </div>
 
-      ${renderMapSVG(points)}
+      <div id="globalMapContainer" class="map-container-global"></div>
     </div>
     <div id="pinDetails"></div>`;
   },
@@ -1399,7 +1747,20 @@ const VIEWS = {
         <div class="form-group"><label>Latitude</label><input id="lat" type="number" step="any"></div>
         <div class="form-group"><label>Longitude</label><input id="lng" type="number" step="any"></div>
       </div>
-      ${renderMapSVG(getByKind('local').filter(r => r.lat != null), true)}
+      <p class="note">${currentLang === 'tr' ? '📍 Gözlem yerini haritadan seçmek için dokunun veya kırmızı pin\'i sürükleyin:' : '📍 Tap the map to select observation location or drag the red pin:'}</p>
+      <div id="pickerMapContainer" class="map-container-picker"></div>
+
+      <!-- KVKK & Fotoğraf Güvenliği Aydınlatması -->
+      <div class="kvkk-box">
+        <div class="kvkk-title">🔒 ${currentLang === 'tr' ? 'KVKK & Vatandaş Bilimi Güvenlik Onayı' : 'GDPR & Citizen Science Safety Confirmation'}</div>
+        <p class="kvkk-text">
+          ${currentLang === 'tr' ? 'Gözlem yeri olarak okul bahçesi, şehir parkı, orman gibi kamusal alanlar seçilmeli; ev adresi veya özel yaşam alanı kesinlikle belirtilmemelidir.' : 'Observation sites must be public areas such as school gardens or city parks; home addresses must never be used.'}
+        </p>
+        <label class="kvkk-check-label">
+          <input type="checkbox" id="kvkkLocal" required>
+          <span><b>${currentLang === 'tr' ? 'Fotoğraf & Konum Güvenliği Onayı:' : 'Photo & Location Confirmation:'}</b> ${currentLang === 'tr' ? 'Fotoğrafta insan yüzü veya özel mülk bulunmadığını, yaklaşık kamusal bir konum paylaştığımı onaylıyorum.' : 'I confirm that the photo contains no human faces or private property.'} <span class="req">*</span></span>
+        </label>
+      </div>
 
       <div style="margin-top:16px;">
         <button class="btn" onclick="submitLocal()">${currentLang === 'tr' ? 'Gözlemi Kaydet' : 'Submit Observation'}</button>
@@ -1506,6 +1867,10 @@ async function submitResearch() {
   const name = val('rn');
   if (!name) return toast(currentLang === 'tr' ? 'Canlı adı gereklidir!' : 'Organism name is required!');
   
+  if (!$('#kvkkResearch')?.checked) {
+    return toast(currentLang === 'tr' ? '⚠️ Lütfen KVKK ve Fotoğraf Güvenlik Onayı kutusunu işaretleyin!' : '⚠️ Please check the Privacy & Photo Confirmation checkbox!');
+  }
+  
   const latVal = val('lat');
   const lngVal = val('lng');
 
@@ -1561,6 +1926,10 @@ async function submitLocal() {
   const name = val('ln');
   if (!name) return toast(currentLang === 'tr' ? 'Bitki adı gereklidir!' : 'Plant name is required!');
 
+  if (!$('#kvkkLocal')?.checked) {
+    return toast(currentLang === 'tr' ? '⚠️ Lütfen KVKK ve Fotoğraf Güvenlik Onayı kutusunu işaretleyin!' : '⚠️ Please check the Privacy & Photo Confirmation checkbox!');
+  }
+
   const latVal = val('lat');
   const lngVal = val('lng');
 
@@ -1611,6 +1980,7 @@ function exportDataCSV() {
 
 // --- 12. GEZİNME VE EKRAN ÇİZİMİ (Rendering) ---
 function goToTab(tabKey) {
+  cleanupMaps();
   currentTab = tabKey;
   pickedLocation = null;
   renderNav();
@@ -1635,6 +2005,16 @@ function render(keepInputFocus = false) {
   
   if (VIEWS[currentTab]) {
     app.innerHTML = VIEWS[currentTab]();
+  }
+
+  // Haritaları ilgili sekmede coğrafi detayla başlat
+  if (currentTab === 'map') {
+    const points = getByKind('research').concat(getByKind('local')).filter(r => r.lat != null && r.lat !== '');
+    setTimeout(() => initGlobalMap(points), 60);
+  } else if (currentTab === 'research') {
+    setTimeout(() => initPickerMap('lat', 'lng', getOrganisms().filter(r => r.lat != null)), 60);
+  } else if (currentTab === 'local') {
+    setTimeout(() => initPickerMap('lat', 'lng', getByKind('local').filter(r => r.lat != null)), 60);
   }
 
   if (keepInputFocus && activeId) {
